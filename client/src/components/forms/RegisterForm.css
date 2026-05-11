@@ -1,0 +1,322 @@
+.register-form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.register-form h2 {
+  text-align: center;
+  color: var(--text-h);
+  margin-bottom: 30px;
+}
+
+fieldset {
+  border: 2px solid #000000;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--accent-bg);
+}
+
+legend {
+  color: var(--accent);
+  font-weight: bold;
+  padding: 0 10px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg);
+  font-family: inherit;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-group .error {
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 6px;
+  display: block;
+}
+
+.gender-buttons {
+  margin-bottom: 20px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.gender-label {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.gender-label:hover {
+  border-color: #000000;
+}
+
+.gender-label.active {
+  background: var(--accent-bg);
+  border-color: #000000;
+  color: var(--accent);
+}
+
+.gender-label input {
+  width: auto;
+  margin: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.form-actions {
+  margin-top: 24px;
+  padding: 16px 0 4px;
+  border-top: 2px solid #000000;
+}
+
+.register-form .submit-button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 18px;
+  background: #7c3aed;
+  color: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  font-size: 0;
+  font-weight: bold;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.register-form .submit-button::before {
+  content: "\05E9\05DE\05D5\05E8\0020\0020\05E0\05EA\05D5\05E0\05D9\05DD";
+  font-size: 16px;
+  direction: rtl;
+  unicode-bidi: plaintext;
+  word-spacing: 8px;
+}
+
+.register-form .submit-button > * {
+  display: none;
+}
+
+.register-form .submit-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.register-form .submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.register-form .preference-submit-button {
+  appearance: none;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 18px;
+  background: #7c3aed;
+  color: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.register-form .preference-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.range-field {
+  direction: rtl;
+}
+
+.range-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.range-title strong {
+  direction: ltr;
+  white-space: nowrap;
+}
+
+.dual-range {
+  position: relative;
+  height: 34px;
+  margin: 0 8px;
+  direction: ltr;
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+.range-track,
+.range-selected {
+  position: absolute;
+  top: 14px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.range-track {
+  left: 0;
+  right: 0;
+  background: #d7dde2;
+  border: 1px solid #b7c0c8;
+}
+
+.range-selected {
+  background: #0b84d8;
+  border: 1px solid #075c97;
+}
+
+.range-thumb {
+  position: absolute;
+  top: 2px;
+  width: 24px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid #083b73;
+  border-radius: 7px;
+  background: #075ca8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transform: translateX(-50%);
+  z-index: 3;
+  touch-action: none;
+}
+
+.range-thumb:hover,
+.range-thumb:focus-visible {
+  background: #0b6fc7;
+  outline: 2px solid #072f5f;
+  outline-offset: 2px;
+}
+
+.range-track,
+.range-selected {
+  z-index: 0;
+}
+
+.range-selected {
+  z-index: 1;
+}
+.range-scale {
+  position: relative;
+  height: 24px;
+  margin-top: 6px;
+  color: var(--text-h);
+  font-size: 15px;
+  direction: ltr;
+}
+
+.range-scale span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.range-scale span:first-child {
+  transform: translateX(0);
+}
+
+.range-scale span:last-child {
+  transform: translateX(-100%);
+}
+
+.register-form .error {
+  color: #dc2626;
+  padding: 12px;
+  background: #fee;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 2px solid #000000;
+}
+
+.register-form .success {
+  color: #16a34a;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 4px;
+  margin-top: 10px;
+  border: 2px solid #000000;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .register-form {
+    padding: 15px;
+  }
+
+  fieldset {
+    padding: 15px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .gender-label {
+    justify-content: center;
+  }
+}
