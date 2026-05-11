@@ -1,0 +1,117 @@
+.personal-area-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32px;
+  text-align: right;
+}
+
+.personal-area-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 28px;
+}
+
+.personal-area-header h1 {
+  margin: 8px 0 10px;
+}
+
+.personal-area-kicker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.personal-area-subtitle {
+  color: var(--text);
+}
+
+.personal-area-logout,
+.personal-area-actions a,
+.personal-area-empty a {
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--accent-bg);
+  color: var(--text-h);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.personal-area-logout:hover,
+.personal-area-actions a:hover,
+.personal-area-empty a:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.personal-area-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.personal-area-summary div,
+.personal-area-empty {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  background: var(--social-bg);
+}
+
+.personal-area-summary span {
+  display: block;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.personal-area-summary strong {
+  color: var(--text-h);
+  font-size: 22px;
+}
+
+.personal-area-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.personal-area-empty {
+  margin-top: 28px;
+}
+
+.personal-area-empty h2 {
+  margin-bottom: 16px;
+}
+
+@media (max-width: 720px) {
+  .personal-area-page {
+    padding: 24px 18px;
+  }
+
+  .personal-area-header,
+  .personal-area-summary,
+  .personal-area-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .personal-area-header {
+    flex-direction: column;
+  }
+
+  .personal-area-logout,
+  .personal-area-actions a,
+  .personal-area-empty a {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

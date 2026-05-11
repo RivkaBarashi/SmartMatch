@@ -2,6 +2,7 @@ const User = require("../models/user.model");
 const Preference = require("../models/preference.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const path = require("path");
 
 const register = async (req, res) => {
   try {
@@ -44,6 +45,9 @@ const register = async (req, res) => {
     const resumePDFPath = req.files?.resumePDF?.[0]?.path;
     const profileImagePath = req.files?.profileImage?.[0]?.path;
 
+    const resumePDFRelative = resumePDFPath ? `pdfs/${path.basename(resumePDFPath)}` : undefined;
+    const profileImageRelative = profileImagePath ? `images/${path.basename(profileImagePath)}` : undefined;
+
     const user = await User.create({
       name,
       id,
@@ -62,8 +66,8 @@ const register = async (req, res) => {
       appearance,
       height: height ? parseInt(height) : undefined,
       description,
-      resumePDF: resumePDFPath,
-      profileImage: profileImagePath,
+      resumePDF: resumePDFRelative,
+      profileImage: profileImageRelative,
     });
 
     const hasPreferences = [
@@ -147,9 +151,34 @@ const login = async (req, res) => {
 }
 const getMe = async (req, res) => {
   try {
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     res.status(200).json({
-      message: "Protected route works",
-      user: req.user,
+      message: "User data retrieved successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        id: user.id,
+        email: user.email,
+        gender: user.gender,
+        age: user.age,
+        yeshiva: user.yeshiva,
+        financialRequirement: user.financialRequirement,
+        seminar: user.seminar,
+        occupation: user.occupation,
+        financialCapabilities: user.financialCapabilities,
+        style: user.style,
+        city: user.city,
+        ethnicity: user.ethnicity,
+        appearance: user.appearance,
+        height: user.height,
+        description: user.description,
+        resumePDF: user.resumePDF,
+        profileImage: user.profileImage,
+        role: user.role,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

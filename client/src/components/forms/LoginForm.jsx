@@ -19,7 +19,7 @@ export default function LoginForm() {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/profile");
+      navigate("/personal-area");
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || err.message || "שגיאה בהתחברות");
@@ -62,7 +62,7 @@ export default function LoginForm() {
       {error && <p className="error error-message">{error}</p>}
 
       <button type="submit" disabled={loading} className="login-submit-button">
-        {loading ? "מתחבר..." : "כניסה לפרופיל"}
+        {loading ? "מתחבר..." : "כניסה לאזור האישי"}
       </button>
     </form>
   );

@@ -7,3 +7,7 @@ export const register = (data) => {
 export const login = (data) => {
   return api.post("/auth/login", data);
 };
+
+export const getMe = () => {
+  return api.get("/auth/me");
+};
