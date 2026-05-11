@@ -1,9 +1,13 @@
-const Preference = require("../models/preference.model");
+const {
+  createPreferenceForUser,
+  getPreferenceByUserId,
+  updatePreferenceByUserId,
+} = require("../services/preference.service");
 
 const getPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const preferences = await Preference.findOne({ user: userId });
+    const preferences = await getPreferenceByUserId(userId);
 
     if (!preferences) {
       return res.status(404).json({ message: "Preferences not found" });
@@ -51,11 +55,11 @@ const updatePreferences = async (req, res) => {
       ...(heightMax !== undefined && { heightMax: parseInt(heightMax) }),
     };
 
-    const preferences = await Preference.findOneAndUpdate(
-      { user: userId },
-      updateData,
-      { new: true, upsert: true }
-    );
+    const preferences = await updatePreferenceByUserId(userId, updateData);
+
+    if (!preferences) {
+      return res.status(404).json({ message: "Preferences not found" });
+    }
 
     res.status(200).json({
       message: "Preferences updated successfully",
