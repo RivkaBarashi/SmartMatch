@@ -4,6 +4,42 @@ const {
   updatePreferenceByUserId,
 } = require("../services/preference.service");
 
+const normalizePreferences = (data) => {
+  const normalized = {};
+
+  ["ageMin", "ageMax", "heightMin", "heightMax"].forEach((key) => {
+    if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
+      normalized[key] = parseInt(data[key]);
+    }
+  });
+
+  ["style", "ethnicity", "appearance"].forEach((key) => {
+    if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
+      normalized[key] = data[key];
+    }
+  });
+
+  return normalized;
+};
+
+const createPreference = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const preference = await createPreferenceForUser(userId, normalizePreferences(req.body));
+
+    res.status(201).json(preference);
+  } catch (error) {
+    if (error.message === "Preference already exists") {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -35,25 +71,7 @@ const getPreferences = async (req, res) => {
 const updatePreferences = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const {
-      ageMin,
-      ageMax,
-      style,
-      ethnicity,
-      appearance,
-      heightMin,
-      heightMax,
-    } = req.body;
-
-    const updateData = {
-      ...(ageMin !== undefined && { ageMin: parseInt(ageMin) }),
-      ...(ageMax !== undefined && { ageMax: parseInt(ageMax) }),
-      ...(style !== undefined && { style }),
-      ...(ethnicity !== undefined && { ethnicity }),
-      ...(appearance !== undefined && { appearance }),
-      ...(heightMin !== undefined && { heightMin: parseInt(heightMin) }),
-      ...(heightMax !== undefined && { heightMax: parseInt(heightMax) }),
-    };
+    const updateData = normalizePreferences(req.body);
 
     const preferences = await updatePreferenceByUserId(userId, updateData);
 
@@ -76,8 +94,11 @@ const updatePreferences = async (req, res) => {
     });
   } catch (error) {
     console.error("Update preferences error:", error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { getPreferences, updatePreferences };
+module.exports = { createPreference, getPreferences, updatePreferences };

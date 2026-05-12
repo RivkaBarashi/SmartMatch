@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ProfileForm from "../components/forms/ProfileForm";
 import { getMe } from "../services/auth.service";
+import { getMyProfile } from "../services/profile.service";
 import { getPreferences } from "../services/preference.service";
 import "./ProfilePage.css";
 
@@ -21,16 +22,27 @@ export default function ProfilePage() {
           return;
         }
 
-        const [userResponse, preferencesResponse] = await Promise.all([
+        const [userResponse, profileResponse, preferencesResponse] = await Promise.all([
           getMe(),
-          getPreferences().catch(() => null) // Preferences might not exist yet
+          getMyProfile().catch(() => null),
+          getPreferences().catch(() => null)
         ]);
 
-        setUser(userResponse.data.user);
-        setPreferences(preferencesResponse?.data?.preferences || null);
+        const userData = userResponse.data.user;
+        const profileData = profileResponse?.data?.profile || null;
+        // Merge user + profile data for the form, and keep profile image under both image and profileImage
+        const mergedUser = profileData
+          ? {
+              ...userData,
+              ...profileData,
+              profileImage: profileData.image || userData.profileImage,
+            }
+          : userData;
+
+        setUser(mergedUser);
+        localStorage.setItem("user", JSON.stringify(mergedUser));
         
-        // Update localStorage with full user data
-        localStorage.setItem("user", JSON.stringify(userResponse.data.user));
+        setPreferences(preferencesResponse?.data?.preferences || null);
       } catch (err) {
         console.error("Error fetching user profile:", err);
         setError("שגיאה בטעינת הפרופיל");
@@ -42,13 +54,15 @@ export default function ProfilePage() {
     fetchUserProfile();
   }, []);
 
-  const handleProfileUpdate = (updatedUser, updatedPreferences) => {
-    // Update localStorage with new data
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    if (updatedPreferences) {
-      setPreferences(updatedPreferences);
-    }
+  const handleProfileUpdate = (updatedProfile, updatedPreferences) => {
+    const merged = {
+      ...user,
+      ...updatedProfile,
+      profileImage: updatedProfile.image || user.profileImage,
+    };
+    localStorage.setItem("user", JSON.stringify(merged));
+    setUser(merged);
+    if (updatedPreferences) setPreferences(updatedPreferences);
   };
 
   if (loading) {
@@ -86,10 +100,11 @@ export default function ProfilePage() {
 
       <div className="profile-content">
         <div className="profile-image-section">
-          {user.profileImage ? (
+          {(user.image || user.profileImage) ? (
             <img
               src={(() => {
-                const cleanedPath = user.profileImage.replace(/\\/g, '/');
+                const rawPath = user.image || user.profileImage;
+                const cleanedPath = rawPath.replace(/\\/g, '/');
                 if (cleanedPath.startsWith('http')) return cleanedPath;
                 if (cleanedPath.startsWith('/uploads')) return `http://localhost:3000${cleanedPath}`;
                 if (cleanedPath.startsWith('uploads/')) return `http://localhost:3000/${cleanedPath}`;

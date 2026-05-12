@@ -20,29 +20,39 @@ if (!fs.existsSync(pdfsDir)) {
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (file.fieldname === 'resumePDF') {
+    console.log('=== UPLOAD DESTINATION CALLED ===');
+    console.log('Upload destination for field:', file.fieldname);
+    console.log('File mimetype:', file.mimetype);
+    console.log('File originalname:', file.originalname);
+
+    if (['resumePdf', 'resumePDF'].includes(file.fieldname)) {
+      console.log('Saving to pdfs dir:', pdfsDir);
       cb(null, pdfsDir);
-    } else if (file.fieldname === 'profileImage') {
+    } else if (['image', 'profileImage'].includes(file.fieldname)) {
+      console.log('Saving to images dir:', imagesDir);
       cb(null, imagesDir);
     } else {
+      console.log('Saving to uploads dir:', uploadsDir);
       cb(null, uploadsDir);
     }
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const filename = uniqueSuffix + path.extname(file.originalname);
+    console.log('Generated filename:', filename);
+    cb(null, filename);
   }
 });
 
 // File filter
 const fileFilter = (req, file, cb) => {
-  if (file.fieldname === 'resumePDF') {
+  if (['resumePdf', 'resumePDF'].includes(file.fieldname)) {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
       cb(new Error('Only PDF files allowed for resume'), false);
     }
-  } else if (file.fieldname === 'profileImage') {
+  } else if (['image', 'profileImage'].includes(file.fieldname)) {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {

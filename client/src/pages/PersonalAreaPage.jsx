@@ -41,7 +41,7 @@ export default function PersonalAreaPage() {
             </div>
             <div>
               <span>תעודת זהות</span>
-              <strong>{user.id}</strong>
+              <strong>{user.idNumber}</strong>
             </div>
           </section>
 

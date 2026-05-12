@@ -9,7 +9,7 @@ export default function RegisterForm() {
   const { register, handleSubmit, watch, formState: { errors, isDirty } } = useForm({
     defaultValues: {
       name: '',
-      id: '',
+      idNumber: '',
       email: '',
       password: '',
       gender: 'male',
@@ -33,6 +33,9 @@ export default function RegisterForm() {
   const [successMessage, setSuccessMessage] = useState('');
   const [resumePDF, setResumePDF] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const toggleShowPassword = () => setShowPassword((prev) => !prev);
 
   const selectedGender = watch('gender');
 
@@ -110,10 +113,10 @@ export default function RegisterForm() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="id">תעודת זהות *</label>
+          <label htmlFor="idNumber">תעודת זהות *</label>
           <input
-            id="id"
-            {...register('id', {
+            id="idNumber"
+            {...register('idNumber', {
               required: 'תעודת זהות נדרשת',
               pattern: {
                 value: /^\d{9}$/,
@@ -122,7 +125,7 @@ export default function RegisterForm() {
             })}
             placeholder="תעודת זהות"
           />
-          {errors.id && <p className="error">{errors.id.message}</p>}
+          {errors.idNumber && <p className="error">{errors.idNumber.message}</p>}
         </div>
 
         <div className="form-group">
@@ -142,24 +145,33 @@ export default function RegisterForm() {
           {errors.email && <p className="error">{errors.email.message}</p>}
         </div>
 
-        <div className="form-group">
+        <div className="form-group password-group">
           <label htmlFor="password">סיסמה *</label>
-          <input
-            id="password"
-            type="password"
-            {...register('password', {
-              required: 'סיסמה נדרשת',
-              minLength: {
-                value: 8,
-                message: 'סיסמה חייבת להיות לפחות 8 תוים'
-              },
-              pattern: {
-                value: /[a-zA-Z]/,
-                message: 'סיסמה חייבת להכיל לפחות אות אנגלית אחת'
-              }
-            })}
-            placeholder="סיסמה"
-          />
+          <div className="password-input-wrapper">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              {...register('password', {
+                required: 'סיסמה נדרשת',
+                minLength: {
+                  value: 8,
+                  message: 'סיסמה חייבת להיות לפחות 8 תוים'
+                },
+                pattern: {
+                  value: /[a-zA-Z]/,
+                  message: 'סיסמה חייבת להכיל לפחות אות אנגלית אחת'
+                }
+              })}
+              placeholder="סיסמה"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={toggleShowPassword}
+            >
+              {showPassword ? 'הסתר' : 'הצג'}
+            </button>
+          </div>
           {errors.password && <p className="error">{errors.password.message}</p>}
         </div>
 
@@ -324,6 +336,7 @@ export default function RegisterForm() {
           <label htmlFor="resumePDF">קורות חיים (PDF)</label>
           <input
             id="resumePDF"
+            name="resumePDF"
             type="file"
             accept=".pdf"
             onChange={(e) => setResumePDF(e.target.files?.[0])}
@@ -334,6 +347,7 @@ export default function RegisterForm() {
           <label htmlFor="profileImage">תמונה</label>
           <input
             id="profileImage"
+            name="profileImage"
             type="file"
             accept="image/*"
             onChange={(e) => setProfileImage(e.target.files?.[0])}

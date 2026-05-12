@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from '../../services/profile.service';
+import { updatePreferences } from '../../services/preference.service';
 import './RegisterForm.css';
 
 function DualRangeInput({
@@ -167,7 +168,7 @@ export default function ProfileForm({ user, preferences, onUpdate }) {
     defaultValues: {
       // User fields
       name: user?.name || '',
-      id: user?.id || '',
+      idNumber: user?.idNumber || '',
       email: user?.email || '',
       gender: user?.gender || 'male',
       age: user?.age || '',
@@ -215,35 +216,49 @@ export default function ProfileForm({ user, preferences, onUpdate }) {
 
     try {
       setLoading(true);
-      const hasFiles = Boolean(resumePDF || profileImage);
-      let payload = data;
 
-      if (hasFiles) {
-        const formData = new FormData();
-        Object.keys(data).forEach(key => {
-          if (data[key] !== '' && data[key] !== undefined && data[key] !== null) {
-            formData.append(key, data[key]);
-          }
+      // --- PUT /api/profile/ ---
+      const profileFields = [
+        'name', 'gender', 'age', 'yeshiva', 'financialRequirement',
+        'seminar', 'occupation', 'financialCapabilities',
+        'style', 'city', 'ethnicity', 'appearance', 'height', 'description',
+      ];
+
+      let profilePayload;
+      if (resumePDF || profileImage) {
+        profilePayload = new FormData();
+        profileFields.forEach(key => {
+          if (data[key] !== '' && data[key] !== undefined && data[key] !== null)
+            profilePayload.append(key, data[key]);
         });
-
-        if (resumePDF) {
-          formData.append('resumePDF', resumePDF);
-        }
-        if (profileImage) {
-          formData.append('profileImage', profileImage);
-        }
-
-        payload = formData;
+        if (resumePDF) profilePayload.append('resumePdf', resumePDF);
+        if (profileImage) profilePayload.append('image', profileImage);
+      } else {
+        profilePayload = {};
+        profileFields.forEach(key => {
+          if (data[key] !== '' && data[key] !== undefined) profilePayload[key] = data[key];
+        });
       }
 
-      const response = await updateProfile(payload);
-      setSuccessMessage('הפרופיל עודכן בהצלחה');
-      if (onUpdate) onUpdate(response.data.user, response.data.preferences);
+      const profileRes = await updateProfile(profilePayload);
 
-      // Redirect to personal area after 2 seconds
-      setTimeout(() => {
-        navigate('/personal-area');
-      }, 2000);
+      // --- PUT /api/preference/ ---
+      const preferencePayload = {
+        ageMin: data.ageMin,
+        ageMax: data.ageMax,
+        heightMin: data.heightMin,
+        heightMax: data.heightMax,
+        style: data.preferenceStyle,
+        ethnicity: data.preferenceEthnicity,
+        appearance: data.preferenceAppearance,
+      };
+
+      const prefRes = await updatePreferences(preferencePayload);
+
+      setSuccessMessage('הפרופיל עודכן בהצלחה');
+      if (onUpdate) onUpdate(profileRes.data.profile, prefRes.data.preferences);
+
+      setTimeout(() => navigate('/personal-area'), 2000);
     } catch (err) {
       console.error('Profile update error:', err);
       setError(err.response?.data?.message || err.message || 'שגיאה בעדכון הפרופיל');
@@ -271,10 +286,10 @@ export default function ProfileForm({ user, preferences, onUpdate }) {
         </div>
 
         <div className="form-group">
-          <label htmlFor="id">תעודת זהות *</label>
+          <label htmlFor="idNumber">תעודת זהות *</label>
           <input
-            id="id"
-            {...register('id', {
+            id="idNumber"
+            {...register('idNumber', {
               required: 'תעודת זהות נדרשת',
               pattern: {
                 value: /^\d{9}$/,
@@ -283,7 +298,7 @@ export default function ProfileForm({ user, preferences, onUpdate }) {
             })}
             placeholder="תעודת זהות"
           />
-          {errors.id && <p className="error">{errors.id.message}</p>}
+          {errors.idNumber && <p className="error">{errors.idNumber.message}</p>}
         </div>
 
         <div className="form-group">
@@ -464,6 +479,7 @@ export default function ProfileForm({ user, preferences, onUpdate }) {
           <label htmlFor="resumePDF">קורות חיים (PDF)</label>
           <input
             id="resumePDF"
+            name="resumePDF"
             type="file"
             accept=".pdf"
             onChange={(e) => setResumePDF(e.target.files?.[0])}
@@ -474,6 +490,7 @@ export default function ProfileForm({ user, preferences, onUpdate }) {
           <label htmlFor="profileImage">תמונה</label>
           <input
             id="profileImage"
+            name="profileImage"
             type="file"
             accept="image/*"
             onChange={(e) => setProfileImage(e.target.files?.[0])}

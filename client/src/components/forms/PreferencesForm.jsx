@@ -195,48 +195,18 @@ export default function PreferencesForm() {
     }
   }, [navigate, registrationDraft.data]);
 
-  const buildPayload = (preferences) => {
-    const mergedData = {
-      ...registrationDraft.data,
-      ...preferences,
-    };
-
-    const { resumePDF, profileImage } = registrationDraft.files;
-    const hasFiles = Boolean(resumePDF || profileImage);
-
-    if (!hasFiles) {
-      return mergedData;
-    }
-
-    const formData = new FormData();
-    Object.entries(mergedData).forEach(([key, value]) => {
-      if (value !== '' && value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
-
-    if (resumePDF) {
-      formData.append('resumePDF', resumePDF);
-    }
-
-    if (profileImage) {
-      formData.append('profileImage', profileImage);
-    }
-
-    return formData;
-  };
-
   const onSubmit = async (preferences) => {
     setError('');
 
     try {
       setLoading(true);
-      const payload = buildPayload(preferences);
-      await completeRegistration(payload);
+      const { resumePDF, profileImage } = registrationDraft.files;
+      await completeRegistration(registrationDraft.data, preferences, { resumePDF, profileImage });
       clearRegistrationDraft();
       navigate('/login');
     } catch (err) {
       console.error(err);
+      
       setError(err.response?.data?.message || err.message || 'שגיאה בשמירת הנתונים');
     } finally {
       setLoading(false);

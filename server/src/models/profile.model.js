@@ -1,22 +1,33 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const profileSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    age: { type: Number, required: true },
-    city: { type: String, required: true },
-    height: { type: Number, required: true },
-    style: { type: String, enum: ['modest', 'classic', 'open'], required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+
+    gender: { type: String, enum: ["male", "female"], required: true },
+    age: { type: Number },
+    city: { type: String },
+    height: { type: Number },
+
+    style: { type: String, enum: ["conservative", "modern", "open", "classic"] },
+    appearance: { type: String, enum: ["slim", "average", "full", "chubby"] },
+    ethnicity: { type: String, enum: ["ashkenazi", "sephardic", "yemenite", "other"] },
+
     description: { type: String },
+
+    // Male fields
     yeshiva: { type: String },
-    seminary: { type: String },
-    occupation : { type: String },
-    financialLevel: { type: String, enum: ['low', 'medium', 'high' , 'very_high'] },
+    financialRequirement: { type: String },
+
+    // Female fields
+    seminar: { type: String },
+    occupation: { type: String },
+    financialCapabilities: { type: String },
 
     resumePdf: { type: String },
-    image: { type: String }
+    image: { type: String },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Profile', profileSchema);
+module.exports = mongoose.model("Profile", profileSchema);

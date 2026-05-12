@@ -1,6 +1,9 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
 const protect = (req, res, next) => {
+  console.log('=== AUTH MIDDLEWARE ===');
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
@@ -8,17 +11,19 @@ const protect = (req, res, next) => {
   }
 
   if (!token) {
+    console.log('No token provided');
     return res.status(401).json({ message: "No token provided" });
   }
 
   try {
-    const jwt = require("jsonwebtoken");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('Token verified for user:', decoded.userId);
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('Token verification failed:', error.message);
     return res.status(401).json({ message: "Token not valid" });
   }
 };
- module.exports = { protect }
+
+module.exports = { protect };

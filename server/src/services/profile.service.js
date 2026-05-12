@@ -21,7 +21,7 @@ const updateProfileByUserId = async (userId, profileData) => {
   return await Profile.findOneAndUpdate(
     { user: userId },
     profileData,
-    { new: true }
+    { new: true, runValidators: true }
   );
 };
 

@@ -21,7 +21,7 @@ const updatePreferenceByUserId = async (userId, preferenceData) => {
   return await Preference.findOneAndUpdate(
     { user: userId },
     preferenceData,
-    { new: true }
+    { new: true, runValidators: true }
   );
 };
 
