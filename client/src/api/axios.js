@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const baseURL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.DEV ? "/api" : "http://127.0.0.1:3000/api");
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:3000/api",
+  baseURL,
 });
 
 // Add a request interceptor to handle FormData and add auth token

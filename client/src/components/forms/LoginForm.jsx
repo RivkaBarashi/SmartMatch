@@ -30,7 +30,11 @@ export default function LoginForm() {
       navigate("/personal-area");
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || "שגיאה בהתחברות");
+      setError(
+        err.response?.data?.message ||
+        (err.request ? "לא ניתן להתחבר לשרת. וודא שהשרת המקומי רץ ב־3000." : err.message) ||
+        "שגיאה בהתחברות"
+      );
     } finally {
       setLoading(false);
     }
