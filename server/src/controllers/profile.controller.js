@@ -2,6 +2,8 @@ const {
   createProfileForUser,
   getProfileByUserId,
   updateProfileByUserId,
+  deleteProfileByUserId,
+  getProfileWithAccess,
 } = require("../services/profile.service");
 const path = require("path");
 
@@ -81,6 +83,23 @@ const getMyProfile = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const requesterId = req.user.userId;
+    const requesterRole = req.user.role;
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
+    const profile = await getProfileWithAccess(requesterId, userId, requesterRole);
+    res.status(200).json({ message: "Profile retrieved successfully", profile });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 const updateProfile = async (req, res) => {
   console.log('\n=== UPDATE PROFILE CALLED ===');
   console.log('User ID:', req.user?.userId);
@@ -125,4 +144,22 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { createProfile, getMyProfile, updateProfile };
+const deleteProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    if (!userId) {
+      return res.status(400).json({ message: "User ID not found" });
+    }
+
+    const result = await deleteProfileByUserId(userId);
+    if (!result) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    res.status(200).json({ message: "Profile deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createProfile, getMyProfile, updateProfile, getProfile, deleteProfile };

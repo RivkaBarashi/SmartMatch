@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createProfile, getMyProfile, updateProfile } = require("../controllers/profile.controller");
+const { createProfile, getMyProfile, updateProfile, getProfile, deleteProfile } = require("../controllers/profile.controller");
 const { protect } = require("../middleware/auth.middleware");
 const upload = require("../middleware/upload.middleware");
 
@@ -23,6 +23,8 @@ const handleMulterError = (err, req, res, next) => {
 
 router.post("/", protect, handleUpload, handleMulterError, createProfile);
 router.get("/me", protect, getMyProfile);
+router.get("/:userId", protect, getProfile);
 router.put("/", protect, handleUpload, handleMulterError, updateProfile);
+router.delete("/", protect, deleteProfile);
 
 module.exports = router;

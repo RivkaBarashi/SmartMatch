@@ -1,4 +1,5 @@
 const Profile = require("../models/profile.model");
+const Interest = require("../models/interest.model");
 
 const createProfileForUser = async (userId, profileData) => {
   const existingProfile = await Profile.findOne({ user: userId });
@@ -25,8 +26,59 @@ const updateProfileByUserId = async (userId, profileData) => {
   );
 };
 
+const deleteProfileByUserId = async (userId) => {
+  const result = await Profile.findOneAndDelete({ user: userId });
+  return result;
+};
+
+const checkMutualMatch = async (requesterId, targetUserId) => {
+  // Check if there's a mutual accepted interest between two users
+  const sent = await Interest.findOne({
+    sender: requesterId,
+    receiver: targetUserId,
+    status: 'accepted',
+  });
+
+  const received = await Interest.findOne({
+    sender: targetUserId,
+    receiver: requesterId,
+    status: 'accepted',
+  });
+
+  return sent && received;
+};
+
+const getProfileWithAccess = async (requesterId, targetUserId, requesterRole) => {
+  const profile = await Profile.findOne({ user: targetUserId });
+
+  if (!profile) {
+    const error = new Error('Profile not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Admin or own profile can see everything
+  if (requesterRole === 'admin' || requesterId.toString() === targetUserId.toString()) {
+    return profile;
+  }
+
+  // Check for mutual match
+  const hasMutualMatch = await checkMutualMatch(requesterId, targetUserId);
+
+  if (!hasMutualMatch) {
+    // Remove sensitive files for non-matched users
+    profile.resumePdf = null;
+    profile.image = null;
+  }
+
+  return profile;
+};
+
 module.exports = {
   createProfileForUser,
   getProfileByUserId,
   updateProfileByUserId,
+  deleteProfileByUserId,
+  checkMutualMatch,
+  getProfileWithAccess,
 };

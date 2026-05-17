@@ -7,13 +7,13 @@ const {
 const normalizePreferences = (data) => {
   const normalized = {};
 
-  ["ageMin", "ageMax", "heightMin", "heightMax"].forEach((key) => {
+  ["ageMin", "ageMax", "heightMin", "heightMax", "financialMin", "financialMax"].forEach((key) => {
     if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
       normalized[key] = parseInt(data[key]);
     }
   });
 
-  ["style", "ethnicity", "appearance"].forEach((key) => {
+  ["style", "preferredAppearance", "city"].forEach((key) => {
     if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
       normalized[key] = data[key];
     }
@@ -55,11 +55,13 @@ const getPreferences = async (req, res) => {
         _id: preferences._id,
         ageMin: preferences.ageMin,
         ageMax: preferences.ageMax,
+        city: preferences.city,
         style: preferences.style,
-        ethnicity: preferences.ethnicity,
-        appearance: preferences.appearance,
+        preferredAppearance: preferences.preferredAppearance,
         heightMin: preferences.heightMin,
         heightMax: preferences.heightMax,
+        financialMin: preferences.financialMin,
+        financialMax: preferences.financialMax,
       },
     });
   } catch (error) {
@@ -85,11 +87,13 @@ const updatePreferences = async (req, res) => {
         _id: preferences._id,
         ageMin: preferences.ageMin,
         ageMax: preferences.ageMax,
+        city: preferences.city,
         style: preferences.style,
-        ethnicity: preferences.ethnicity,
-        appearance: preferences.appearance,
+        preferredAppearance: preferences.preferredAppearance,
         heightMin: preferences.heightMin,
         heightMax: preferences.heightMax,
+        financialMin: preferences.financialMin,
+        financialMax: preferences.financialMax,
       },
     });
   } catch (error) {

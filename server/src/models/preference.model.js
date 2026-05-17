@@ -7,12 +7,17 @@ const preferenceSchema = new mongoose.Schema(
     ageMin: { type: Number },
     ageMax: { type: Number },
 
+    city: { type: String },
+
     heightMin: { type: Number },
     heightMax: { type: Number },
 
     style: { type: String, enum: ["conservative", "modern", "open", "classic"] },
-    ethnicity: { type: String, enum: ["ashkenazi", "sephardic", "yemenite", "other"] },
-    appearance: { type: String, enum: ["slim", "average", "full", "chubby"] },
+
+    preferredAppearance: { type: String, enum: ["slim", "average", "full", "chubby"] },
+
+    financialMin: { type: Number },
+    financialMax: { type: Number },
   },
   { timestamps: true }
 );
