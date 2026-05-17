@@ -3,6 +3,12 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../services/auth.service.js";
 
+// Hardcoded admin credentials
+const ADMIN_CREDENTIALS = {
+  idNumber: "900000001",
+  password: "Adm!n#2026Secure",
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState("");
@@ -34,7 +40,20 @@ export default function LoginPage() {
       if (res?.token) {
         localStorage.setItem("token", res.token);
         localStorage.setItem("user", JSON.stringify(res.user));
-        navigate("/personal-area");
+        
+        // Check if login credentials match admin credentials
+        const isAdmin = data.idNumber?.trim() === ADMIN_CREDENTIALS.idNumber &&
+                        data.password === ADMIN_CREDENTIALS.password;
+        
+        if (isAdmin) {
+          localStorage.setItem("role", "admin");
+          console.log("Admin logged in, redirecting to /admin");
+          navigate("/admin");
+        } else {
+          localStorage.setItem("role", "user");
+          console.log("User logged in, redirecting to /personal-area");
+          navigate("/personal-area");
+        }
       } else {
         setApiError("Login failed: no token returned");
       }
