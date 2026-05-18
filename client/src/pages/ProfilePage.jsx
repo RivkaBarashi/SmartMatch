@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import {
+  Alert,
   Box,
   Button,
   Container,
   FormControl,
   FormHelperText,
+  Input,
   InputLabel,
   MenuItem,
   Select,
@@ -45,6 +47,10 @@ export default function ProfilePage() {
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [imageError, setImageError] = useState("");
+  const [resumeError, setResumeError] = useState("");
 
   const {
     control,
@@ -64,10 +70,55 @@ export default function ProfilePage() {
     },
   });
 
+  const isValidImageFile = (file) => file && file.type.startsWith("image/");
+  const isValidPdfFile = (file) =>
+    file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"));
+
+  const handleImageChange = (event) => {
+    setImageError("");
+    const file = event.target.files?.[0] || null;
+    if (!file) {
+      setImageFile(null);
+      return;
+    }
+    if (!isValidImageFile(file)) {
+      setImageFile(null);
+      setImageError("בחר קובץ תמונה חוקי (JPEG, PNG וכו')");
+      return;
+    }
+    setImageFile(file);
+  };
+
+  const handleResumeChange = (event) => {
+    setResumeError("");
+    const file = event.target.files?.[0] || null;
+    if (!file) {
+      setPdfFile(null);
+      return;
+    }
+    if (!isValidPdfFile(file)) {
+      setPdfFile(null);
+      setResumeError("בחר קובץ PDF חוקי");
+      return;
+    }
+    setPdfFile(file);
+  };
+
   const onSubmit = async (data) => {
     setApiError("");
     setSuccessMessage("");
     setIsSubmitting(true);
+
+    if (imageFile && !isValidImageFile(imageFile)) {
+      setImageError("בחר קובץ תמונה חוקי (JPEG, PNG וכו')");
+      setIsSubmitting(false);
+      return;
+    }
+    if (pdfFile && !isValidPdfFile(pdfFile)) {
+      setResumeError("בחר קובץ PDF חוקי");
+      setIsSubmitting(false);
+      return;
+    }
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -86,16 +137,37 @@ export default function ProfilePage() {
       appearance: data.appearance || undefined,
       financialRequirement: data.financialRequirement === "" ? undefined : Number(data.financialRequirement),
       description: data.description || undefined,
-      // image and resumePdf are intentionally omitted for future upload support
     };
 
-    console.log("Profile payload:", payload);
+    const hasFiles = Boolean(imageFile || pdfFile);
+    const requestData = hasFiles ? new FormData() : payload;
+
+    if (hasFiles) {
+      requestData.append("gender", data.gender || "");
+      requestData.append("age", data.age ?? "");
+      requestData.append("city", data.city || "");
+      requestData.append("height", data.height ?? "");
+      requestData.append("ethnicity", data.ethnicity || "");
+      requestData.append("style", data.style || "");
+      requestData.append("appearance", data.appearance || "");
+      requestData.append("financialRequirement", data.financialRequirement ?? "");
+      requestData.append("description", data.description || "");
+      if (imageFile) {
+        requestData.append("image", imageFile);
+      }
+      if (pdfFile) {
+        requestData.append("resumePdf", pdfFile);
+      }
+    }
+
+    console.log("Profile payload:", hasFiles ? "FormData" : payload);
 
     try {
-      const response = await createProfile(payload, token);
+      const response = await createProfile(requestData, token);
+
       console.log("Profile response:", response);
       setSuccessMessage("הפרופיל נוצר בהצלחה");
-      navigate("/preferences");
+      setTimeout(() => navigate("/preferences"), 750);
     } catch (error) {
       console.error("Create profile error:", error);
       const message = error?.response?.data?.message || error.message || "שגיאה בשמירת הפרופיל";
@@ -271,15 +343,59 @@ export default function ProfilePage() {
           )}
         />
 
-        {apiError && (
-          <Typography color="error.main" sx={{ mt: 1 }}>
-            {apiError}
+        <Box>
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+            תמונת פרופיל (אופציונלי)
           </Typography>
+          <Input
+            type="file"
+            inputProps={{ accept: "image/*" }}
+            onChange={handleImageChange}
+            disableUnderline
+          />
+          {imageFile && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              נבחר קובץ: {imageFile.name}
+            </Typography>
+          )}
+          {imageError && (
+            <Typography color="error.main" variant="body2" sx={{ mt: 1 }}>
+              {imageError}
+            </Typography>
+          )}
+        </Box>
+
+        <Box>
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+            קובץ קורות חיים PDF (אופציונלי)
+          </Typography>
+          <Input
+            type="file"
+            inputProps={{ accept: ".pdf,application/pdf" }}
+            onChange={handleResumeChange}
+            disableUnderline
+          />
+          {pdfFile && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              נבחר קובץ: {pdfFile.name}
+            </Typography>
+          )}
+          {resumeError && (
+            <Typography color="error.main" variant="body2" sx={{ mt: 1 }}>
+              {resumeError}
+            </Typography>
+          )}
+        </Box>
+
+        {apiError && (
+          <Alert severity="error" sx={{ mt: 1 }}>
+            {apiError}
+          </Alert>
         )}
         {successMessage && (
-          <Typography color="success.main" sx={{ mt: 1 }}>
+          <Alert severity="success" sx={{ mt: 1 }}>
             {successMessage}
-          </Typography>
+          </Alert>
         )}
 
         <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>

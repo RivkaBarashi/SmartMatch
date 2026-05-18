@@ -6,6 +6,7 @@ import {
   Button,
   Container,
   FormControl,
+  Input,
   InputLabel,
   MenuItem,
   Paper,
@@ -31,6 +32,9 @@ export default function PersonalAreaPage() {
   const [successOpen, setSuccessOpen] = useState(false);
   const [profileSubmitting, setProfileSubmitting] = useState(false);
   const [preferencesSubmitting, setPreferencesSubmitting] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -94,6 +98,23 @@ export default function PersonalAreaPage() {
       financialMax: "",
     },
   });
+
+  const normalizeFileUrl = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    if (path.startsWith("/")) return `${baseUrl}${path}`;
+    if (path.startsWith("uploads/")) return `${baseUrl}/${path}`;
+    return `${baseUrl}/uploads/${path}`;
+  };
+
+  const handleImageReplace = (event) => {
+    setImageFile(event.target.files?.[0] ?? null);
+  };
+
+  const handlePdfReplace = (event) => {
+    setPdfFile(event.target.files?.[0] ?? null);
+  };
 
   useEffect(() => {
     if (role === "admin") {
@@ -188,6 +209,27 @@ export default function PersonalAreaPage() {
           : Number(data.financialRequirement),
       description: data.description || undefined,
     };
+
+    const hasFiles = Boolean(imageFile || pdfFile);
+    const requestData = hasFiles ? new FormData() : payload;
+
+    if (hasFiles) {
+      requestData.append("gender", data.gender || "");
+      requestData.append("ethnicity", data.ethnicity || "");
+      requestData.append("age", data.age ?? "");
+      requestData.append("city", data.city || "");
+      requestData.append("height", data.height ?? "");
+      requestData.append("style", data.style || "");
+      requestData.append("appearance", data.appearance || "");
+      requestData.append("financialRequirement", data.financialRequirement ?? "");
+      requestData.append("description", data.description || "");
+      if (imageFile) {
+        requestData.append("image", imageFile);
+      }
+      if (pdfFile) {
+        requestData.append("resumePdf", pdfFile);
+      }
+    }
 
     try {
       const response = await updateProfile(payload);

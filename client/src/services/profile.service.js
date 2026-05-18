@@ -5,7 +5,13 @@ export const createProfile = async (data, token) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
+  };
+
+  if (data instanceof FormData) {
+    config.headers["Content-Type"] = undefined;
+  }
+
+  const response = await api.post("/api/profile", data, config);
   return response.data;
 };
 
@@ -19,10 +25,16 @@ export const getMyProfile = async (token) => {
 };
 
 export const updateProfile = async (data, token) => {
-  const response = await api.put("/profile", data, {
+  const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
+  };
+
+  if (data instanceof FormData) {
+    config.headers["Content-Type"] = undefined;
+  }
+
+  const response = await api.put("/api/profile", data, config);
   return response.data;
 };

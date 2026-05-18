@@ -24,6 +24,24 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedImageFields = ["image", "profileImage"];
+    const allowedPdfFields = ["resumePdf", "resumePDF"];
+    const isImageFile = file.mimetype.startsWith("image/");
+    const isPdfFile = file.mimetype === "application/pdf";
+
+    if (allowedImageFields.includes(file.fieldname) && isImageFile) {
+      return cb(null, true);
+    }
+    if (allowedPdfFields.includes(file.fieldname) && isPdfFile) {
+      return cb(null, true);
+    }
+
+    return cb(new Error("Invalid file type"));
+  },
+});
 
 module.exports = upload;

@@ -19,7 +19,7 @@ export const getMyPreferences = async (token) => {
 };
 
 export const updatePreferences = async (data, token) => {
-  const response = await api.put("/preference", data, {
+  const response = await api.put("/api/preference", data, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
