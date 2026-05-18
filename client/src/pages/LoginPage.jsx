@@ -1,6 +1,17 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  Container,
+  IconButton,
+  InputAdornment,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { loginUser } from "../services/auth.service.js";
 import { getMyProfile } from "../services/profile.service.js";
 import { getMyPreferences } from "../services/preference.service.js";
@@ -13,11 +24,13 @@ const ADMIN_CREDENTIALS = {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [apiError, setApiError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm({
@@ -26,6 +39,10 @@ export default function LoginPage() {
       password: "",
     },
   });
+
+  const handleTogglePassword = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   const onSubmit = async (data) => {
     setApiError("");
@@ -55,7 +72,17 @@ export default function LoginPage() {
           return;
         }
 
-        // Onboarding flow: profile -> preferences -> personal area
+        const shouldOnboard = location.state?.onboarding === true || localStorage.getItem("onboarding") === "true";
+        localStorage.removeItem("onboarding");
+        localStorage.setItem("role", "user");
+
+        if (!shouldOnboard) {
+          console.log("Normal login, redirecting to /personal-area");
+          navigate("/personal-area");
+          return;
+        }
+
+        // Only newly registered users should follow onboarding flow
         let hasProfile = false;
         let hasPreferences = false;
 
@@ -69,8 +96,7 @@ export default function LoginPage() {
         }
 
         if (!hasProfile) {
-          localStorage.setItem("role", "user");
-          console.log("No profile found. Redirecting to /profile");
+          console.log("Onboarding user without profile. Redirecting to /profile");
           navigate("/profile");
           return;
         }
@@ -84,12 +110,11 @@ export default function LoginPage() {
           }
         }
 
-        localStorage.setItem("role", "user");
         if (!hasPreferences) {
-          console.log("Profile exists but no preferences found. Redirecting to /preferences");
+          console.log("Onboarding user with profile but no preferences. Redirecting to /preferences");
           navigate("/preferences");
         } else {
-          console.log("Profile and preferences found. Redirecting to /personal-area");
+          console.log("Onboarding user already has complete setup. Redirecting to /personal-area");
           navigate("/personal-area");
         }
       } else {
@@ -110,33 +135,75 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={{ maxWidth: 420, margin: "0 auto", padding: 24 }}>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <label htmlFor="idNumber">ID Number</label>
-        <input
-          id="idNumber"
-          type="text"
-          {...register("idNumber", {
-            pattern: { value: /^\d{9}$/, message: "ID must be 9 digits" },
-          })}
-        />
-        {errors.idNumber && <p style={{ color: "red" }}>{errors.idNumber.message}</p>}
+    <Container maxWidth="sm" sx={{ py: 6 }}>
+      <Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 3 }}>
+        <Box sx={{ textAlign: "center", mb: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            התחברות
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            היכנס עם תעודת זהות וסיסמה כדי להמשיך
+          </Typography>
+        </Box>
 
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          {...register("password", { required: "Password is required" })}
-        />
-        {errors.password && <p style={{ color: "red" }}>{errors.password.message}</p>}
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: "grid", gap: 2 }}>
+          <Controller
+            name="idNumber"
+            control={control}
+            rules={{
+              required: "תעודת זהות היא שדה חובה",
+              pattern: { value: /^\d{9}$/, message: "תעודת זהות חייבת להכיל 9 ספרות" },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="תעודת זהות"
+                placeholder="הכנס תעודת זהות"
+                fullWidth
+                error={Boolean(errors.idNumber)}
+                helperText={errors.idNumber ? errors.idNumber.message : ""}
+                inputProps={{ maxLength: 9, inputMode: "numeric" }}
+              />
+            )}
+          />
 
-        {apiError && <p style={{ color: "red" }}>{apiError}</p>}
+          <Controller
+            name="password"
+            control={control}
+            rules={{ required: "סיסמה היא שדה חובה" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="סיסמה"
+                placeholder="הכנס סיסמה"
+                fullWidth
+                type={showPassword ? "text" : "password"}
+                error={Boolean(errors.password)}
+                helperText={errors.password ? errors.password.message : ""}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleTogglePassword} edge="end" aria-label="Toggle password visibility">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+          />
 
-        <button type="submit" disabled={isSubmitting} style={{ marginTop: 16 }}>
-          {isSubmitting ? "Logging in..." : "Login"}
-        </button>
-      </form>
-    </main>
+          {apiError && (
+            <Typography color="error" sx={{ textAlign: "center", mt: 1 }}>
+              {apiError}
+            </Typography>
+          )}
+
+          <Button type="submit" variant="contained" size="large" disabled={isSubmitting} sx={{ py: 1.5 }}>
+            {isSubmitting ? "ממשיכים..." : "התחברות"}
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

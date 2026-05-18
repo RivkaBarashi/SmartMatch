@@ -1,18 +1,27 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useLocation } from "react-router-dom";
-
-const STORAGE_KEY = "smartmatch.registerDraft";
+import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  Container,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { registerUser } from "../services/auth.service.js";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [serverError, setServerError] = useState("");
+  const [apiError, setApiError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const {
     register,
     handleSubmit,
-    reset,
-    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -23,106 +32,126 @@ export default function RegisterPage() {
     },
   });
 
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (savedDraft) {
-      try {
-        reset(JSON.parse(savedDraft));
-      } catch (err) {
-        console.error("Failed to parse registration draft", err);
-      }
+  const handleTogglePassword = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const onSubmit = async (data) => {
+    setApiError("");
+    setIsSubmitting(true);
+
+    const payload = {
+      name: data.name.trim(),
+      idNumber: data.idNumber.trim(),
+      email: data.email.trim(),
+      password: data.password,
+    };
+
+    console.log("Register payload:", payload);
+
+    try {
+      const response = await registerUser(payload);
+      console.log("Register response:", response);
+      localStorage.setItem("onboarding", "true");
+      navigate("/login", { state: { onboarding: true } });
+    } catch (error) {
+      console.error("Register error:", error);
+      const message = error?.response?.data?.message || error.message || "שגיאה בהרשמה";
+      setApiError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (location.state?.serverError) {
-      setServerError(location.state.serverError);
-    }
-  }, [reset, location.state]);
-
-  useEffect(() => {
-    const subscription = watch(() => {
-      if (serverError) {
-        setServerError("");
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, serverError]);
-
-  const onSubmit = (data) => {
-    console.log("Register submit data:", data);
-    setServerError("");
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    navigate("/preferences");
   };
 
   return (
-    <main style={{ maxWidth: 480, margin: "0 auto", padding: 24 }}>
-      <h1>Register</h1>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <label htmlFor="name">Name</label>
-        <input
-          id="name"
-          type="text"
-          {...register("name", {
-            required: "Name is required",
-          })}
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        הרשמה
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: "grid", gap: 2 }}>
+        <TextField
+          label="שם מלא"
+          placeholder="הכנס שם מלא"
+          {...register("name", { required: "שם מלא הוא שדה חובה" })}
+          error={Boolean(errors.name)}
+          helperText={errors.name ? errors.name.message : ""}
+          fullWidth
         />
-        {errors.name && <p style={{ color: "red" }}>{errors.name.message}</p>}
 
-        <label htmlFor="idNumber">ID Number</label>
-        <input
-          id="idNumber"
-          type="text"
+        <TextField
+          label="תעודת זהות"
+          placeholder="הכנס תעודת זהות בעלת 9 ספרות"
           {...register("idNumber", {
-            required: "ID number is required",
+            required: "תעודת זהות היא שדה חובה",
             pattern: {
               value: /^\d{9}$/,
-              message: "ID number must contain exactly 9 digits",
+              message: "תעודת זהות חייבת להכיל 9 ספרות",
             },
           })}
+          error={Boolean(errors.idNumber)}
+          helperText={errors.idNumber ? errors.idNumber.message : ""}
+          fullWidth
+          inputProps={{ maxLength: 9, inputMode: "numeric" }}
         />
-        {errors.idNumber && <p style={{ color: "red" }}>{errors.idNumber.message}</p>}
 
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="text"
+        <TextField
+          label="אימייל"
+          placeholder="הכנס כתובת אימייל"
           {...register("email", {
-            required: "Email is required",
+            required: "אימייל הוא שדה חובה",
             pattern: {
               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: "Email must be a valid email address",
+              message: "הזן כתובת אימייל תקינה",
             },
           })}
+          error={Boolean(errors.email)}
+          helperText={errors.email ? errors.email.message : ""}
+          fullWidth
         />
-        {errors.email && <p style={{ color: "red" }}>{errors.email.message}</p>}
 
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
+        <TextField
+          label="סיסמה"
+          placeholder="הכנס סיסמה"
+          type={showPassword ? "text" : "password"}
           {...register("password", {
-            required: "Password is required",
+            required: "סיסמה היא שדה חובה",
             minLength: {
               value: 8,
-              message: "Password must be at least 8 characters",
+              message: "הסיסמה חייבת להכיל לפחות 8 תווים",
             },
             maxLength: {
               value: 16,
-              message: "Password must be no more than 16 characters",
+              message: "הסיסמה חייבת להכיל עד 16 תווים",
             },
             pattern: {
               value: /[A-Za-z]/,
-              message: "Password must include at least one English letter",
+              message: "הסיסמה חייבת לכלול אות אנגלית אחת לפחות",
             },
           })}
+          error={Boolean(errors.password)}
+          helperText={errors.password ? errors.password.message : ""}
+          fullWidth
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleTogglePassword} edge="end" aria-label="Toggle password visibility">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
-        {errors.password && <p style={{ color: "red" }}>{errors.password.message}</p>}
-        {serverError && <p style={{ color: "red" }}>{serverError}</p>}
 
-        <button type="submit" style={{ marginTop: 20 }}>
-          Save Data
-        </button>
-      </form>
-    </main>
+        {apiError && (
+          <Typography color="error.main" sx={{ mt: 1 }}>
+            {apiError}
+          </Typography>
+        )}
+
+        <Button type="submit" variant="contained" disabled={isSubmitting} size="large">
+          {isSubmitting ? "שולח..." : "הרשמה"}
+        </Button>
+      </Box>
+    </Container>
   );
 }

@@ -1,144 +1,88 @@
-﻿import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import {
+  Box,
+  Button,
+  Container,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { createPreferences } from "../services/preference.service.js";
-import { registerUser } from "../services/auth.service.js";
-
-const STORAGE_KEY = "smartmatch.registerDraft";
 
 const styleOptions = [
-  { value: "conservative", label: "Conservative" },
-  { value: "modern", label: "Modern" },
-  { value: "open", label: "Open" },
-  { value: "classic", label: "Classic" },
-];
-
-const ethnicityOptions = [
-  { value: "ashkenazi", label: "Ashkenazi" },
-  { value: "sephardic", label: "Sephardic" },
-  { value: "yemenite", label: "Yemenite" },
-  { value: "other", label: "Other" },
+  { value: "conservative", label: "שמור" },
+  { value: "classic", label: "קלאסי" },
+  { value: "open", label: "פתוח" },
 ];
 
 const appearanceOptions = [
-  { value: "slim", label: "Slim" },
-  { value: "average", label: "Average" },
-  { value: "full", label: "Full" },
-  { value: "chubby", label: "Chubby" },
+  { value: "slim", label: "רזה" },
+  { value: "classic", label: "קלאסי" },
+  { value: "full", label: "מלא" },
+  { value: "chubby", label: "שמן" },
 ];
 
 export default function PreferencesPage() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, handleSubmit, watch } = useForm({
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       ageMin: "",
       ageMax: "",
+      city: "",
       heightMin: "",
       heightMax: "",
       style: "",
-      ethnicity: "",
-      appearance: "",
+      preferredAppearance: "",
+      financialMin: "",
+      financialMax: "",
     },
   });
 
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (!savedDraft) {
-      navigate("/register");
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(savedDraft);
-      if (!parsed || !parsed.name || !parsed.idNumber || !parsed.password) {
-        navigate("/register");
-        return;
-      }
-    } catch (err) {
-      console.error("Invalid registration draft", err);
-      navigate("/register");
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    const subscription = watch(() => {
-      if (apiError) {
-        setApiError("");
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, apiError]);
-
-  const buildPreferencePayload = (values) => {
-    const payload = {};
-
-    ["ageMin", "ageMax", "heightMin", "heightMax"].forEach((key) => {
-      const value = values[key];
-      if (value !== undefined && value !== null && value !== "") {
-        const parsed = Number(value);
-        if (!Number.isNaN(parsed)) {
-          payload[key] = parsed;
-        }
-      }
-    });
-
-    ["style", "ethnicity", "appearance"].forEach((key) => {
-      if (values[key]) {
-        payload[key] = values[key];
-      }
-    });
-
-    return payload;
-  };
-
   const onSubmit = async (values) => {
     setApiError("");
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
+    setIsSubmitting(true);
 
-    if (!savedDraft) {
-      setApiError("Registration data is missing. Please complete the register step first.");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setApiError("נדרש אימות לפני שמירת העדפות");
+      setIsSubmitting(false);
       return;
     }
 
-    let registrationData;
-    try {
-      registrationData = JSON.parse(savedDraft);
-    } catch (err) {
-      console.error("Failed to parse registration draft", err);
-      setApiError("Saved registration data is corrupted. Please re-enter your registration details.");
-      return;
-    }
-
-    const registerPayload = {
-      name: registrationData.name,
-      idNumber: registrationData.idNumber,
-      email: registrationData.email,
-      password: registrationData.password,
+    const payload = {
+      ageMin: values.ageMin === "" ? undefined : Number(values.ageMin),
+      ageMax: values.ageMax === "" ? undefined : Number(values.ageMax),
+      city: values.city || undefined,
+      heightMin: values.heightMin === "" ? undefined : Number(values.heightMin),
+      heightMax: values.heightMax === "" ? undefined : Number(values.heightMax),
+      style: values.style || undefined,
+      preferredAppearance: values.preferredAppearance || undefined,
+      financialMin: values.financialMin === "" ? undefined : Number(values.financialMin),
+      financialMax: values.financialMax === "" ? undefined : Number(values.financialMax),
     };
 
-    const preferencePayload = buildPreferencePayload(values);
+    console.log("Preferences payload:", payload);
 
-    console.log("Saved draft raw:", savedDraft);
-    console.log("Registration draft from localStorage:", registrationData);
-    console.log("Register payload before request:", registerPayload);
-    console.log("Preference payload before createPreferences:", preferencePayload);
-
-    setIsSubmitting(true);
     try {
-      const registerResponse = await registerUser(registerPayload);
-      const token = registerResponse?.token;
-      if (!token) {
-        throw new Error("Registration did not return an authentication token");
-      }
-
-      await createPreferences(preferencePayload, token);
-      localStorage.removeItem(STORAGE_KEY);
-      navigate("/login");
-    } catch (err) {
-      console.error("Submit error:", err);
-      const message = err?.response?.data?.message || err.message || "Unable to save preferences";
+      const response = await createPreferences(payload, token);
+      console.log("Preferences response:", response);
+      navigate("/personal-area");
+    } catch (error) {
+      console.error("Preferences error:", error);
+      const message = error?.response?.data?.message || error.message || "שגיאה בשמירת העדפות";
       setApiError(message);
     } finally {
       setIsSubmitting(false);
@@ -146,56 +90,180 @@ export default function PreferencesPage() {
   };
 
   return (
-    <main style={{ maxWidth: 560, margin: "0 auto", padding: 24 }}>
-      <h1>Preferences</h1>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <label htmlFor="ageMin">Minimum age</label>
-        <input id="ageMin" type="number" {...register("ageMin")} />
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        העדפות
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: "grid", gap: 2 }}>
+        <Controller
+          name="ageMin"
+          control={control}
+          rules={{
+            pattern: { value: /^[0-9]*$/, message: "הזן גיל מינימום תקין" },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="גיל מינימום"
+              type="number"
+              error={Boolean(errors.ageMin)}
+              helperText={errors.ageMin ? errors.ageMin.message : ""}
+              fullWidth
+            />
+          )}
+        />
 
-        <label htmlFor="ageMax">Maximum age</label>
-        <input id="ageMax" type="number" {...register("ageMax")} />
+        <Controller
+          name="ageMax"
+          control={control}
+          rules={{
+            pattern: { value: /^[0-9]*$/, message: "הזן גיל מקסימום תקין" },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="גיל מקסימום"
+              type="number"
+              error={Boolean(errors.ageMax)}
+              helperText={errors.ageMax ? errors.ageMax.message : ""}
+              fullWidth
+            />
+          )}
+        />
 
-        <label htmlFor="heightMin">Minimum height</label>
-        <input id="heightMin" type="number" {...register("heightMin")} />
+        <Controller
+          name="city"
+          control={control}
+          rules={{ required: "עיר היא שדה חובה" }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="עיר"
+              error={Boolean(errors.city)}
+              helperText={errors.city ? errors.city.message : ""}
+              fullWidth
+            />
+          )}
+        />
 
-        <label htmlFor="heightMax">Maximum height</label>
-        <input id="heightMax" type="number" {...register("heightMax")} />
+        <Controller
+          name="heightMin"
+          control={control}
+          rules={{
+            pattern: { value: /^[0-9]*$/, message: "הזן גובה מינימום תקין" },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="גובה מינימום"
+              type="number"
+              error={Boolean(errors.heightMin)}
+              helperText={errors.heightMin ? errors.heightMin.message : ""}
+              fullWidth
+            />
+          )}
+        />
 
-        <label htmlFor="style">Style</label>
-        <select id="style" {...register("style")}> 
-          <option value="">Select style</option>
-          {styleOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="heightMax"
+          control={control}
+          rules={{
+            pattern: { value: /^[0-9]*$/, message: "הזן גובה מקסימום תקין" },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="גובה מקסימום"
+              type="number"
+              error={Boolean(errors.heightMax)}
+              helperText={errors.heightMax ? errors.heightMax.message : ""}
+              fullWidth
+            />
+          )}
+        />
 
-        <label htmlFor="ethnicity">Ethnicity</label>
-        <select id="ethnicity" {...register("ethnicity")}> 
-          <option value="">Select ethnicity</option>
-          {ethnicityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="style"
+          control={control}
+          render={({ field }) => (
+            <FormControl fullWidth>
+              <InputLabel id="style-label">סגנון</InputLabel>
+              <Select labelId="style-label" label="סגנון" {...field}>
+                <MenuItem value="">לא נבחר</MenuItem>
+                {styleOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        />
 
-        <label htmlFor="appearance">Appearance</label>
-        <select id="appearance" {...register("appearance")}> 
-          <option value="">Select appearance</option>
-          {appearanceOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="preferredAppearance"
+          control={control}
+          render={({ field }) => (
+            <FormControl fullWidth>
+              <InputLabel id="appearance-label">מראה חיצוני מועדף</InputLabel>
+              <Select labelId="appearance-label" label="מראה חיצוני מועדף" {...field}>
+                <MenuItem value="">לא נבחר</MenuItem>
+                {appearanceOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        />
 
-        {apiError && <p style={{ color: "red" }}>{apiError}</p>}
-        <button type="submit" disabled={isSubmitting} style={{ marginTop: 20 }}>
-          {isSubmitting ? "Submitting..." : "Submit Preferences"}
-        </button>
-      </form>
-    </main>
+        <Controller
+          name="financialMin"
+          control={control}
+          rules={{
+            pattern: { value: /^[0-9]*$/, message: "הזן סכום כלכלי מינימלי תקין" },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="מצב כלכלי מינימום"
+              type="number"
+              error={Boolean(errors.financialMin)}
+              helperText={errors.financialMin ? errors.financialMin.message : ""}
+              fullWidth
+            />
+          )}
+        />
+
+        <Controller
+          name="financialMax"
+          control={control}
+          rules={{
+            pattern: { value: /^[0-9]*$/, message: "הזן סכום כלכלי מקסימלי תקין" },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="מצב כלכלי מקסימום"
+              type="number"
+              error={Boolean(errors.financialMax)}
+              helperText={errors.financialMax ? errors.financialMax.message : ""}
+              fullWidth
+            />
+          )}
+        />
+
+        {apiError && (
+          <Typography color="error.main" sx={{ mt: 1 }}>
+            {apiError}
+          </Typography>
+        )}
+
+        <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+          {isSubmitting ? "שולח..." : "שמירת העדפות"}
+        </Button>
+      </Box>
+    </Container>
   );
 }

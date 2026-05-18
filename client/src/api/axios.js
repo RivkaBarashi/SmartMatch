@@ -7,4 +7,13 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  const baseURL = config.baseURL || api.defaults.baseURL || "";
+  const url = config.url || "";
+  console.log(`API request: ${config.method?.toUpperCase() || "REQUEST"} ${baseURL}${url}`);
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 export default api;
