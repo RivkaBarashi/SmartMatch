@@ -32,20 +32,16 @@ const deleteProfileByUserId = async (userId) => {
 };
 
 const checkMutualMatch = async (requesterId, targetUserId) => {
-  // Check if there's a mutual accepted interest between two users
-  const sent = await Interest.findOne({
-    sender: requesterId,
-    receiver: targetUserId,
+  // Check if there's an accepted interest between two users (in either direction)
+  const interest = await Interest.findOne({
+    $or: [
+      { sender: requesterId, receiver: targetUserId },
+      { sender: targetUserId, receiver: requesterId }
+    ],
     status: 'accepted',
   });
 
-  const received = await Interest.findOne({
-    sender: targetUserId,
-    receiver: requesterId,
-    status: 'accepted',
-  });
-
-  return sent && received;
+  return !!interest;
 };
 
 const getProfileWithAccess = async (requesterId, targetUserId, requesterRole) => {

@@ -67,7 +67,23 @@ const sendToManager = async (req, res) => {
       return res.status(400).json({ message: 'otherUserId is required' });
     }
 
-    const interest = await approveToManager(userId, otherUserId, 'sender');
+    // Find the interest to determine if user is sender or receiver
+    const Interest = require('../models/interest.model');
+    const existingInterest = await Interest.findOne({
+      $or: [
+        { sender: userId, receiver: otherUserId },
+        { sender: otherUserId, receiver: userId }
+      ]
+    });
+
+    if (!existingInterest) {
+      return res.status(404).json({ message: 'Interest not found' });
+    }
+
+    // Determine if current user is sender or receiver
+    const approverRole = existingInterest.sender.toString() === userId.toString() ? 'sender' : 'receiver';
+
+    const interest = await approveToManager(userId, otherUserId, approverRole);
     res.status(200).json({ message: 'Approved to send to manager', interest });
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });

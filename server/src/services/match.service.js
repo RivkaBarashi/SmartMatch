@@ -4,27 +4,28 @@ const Preference = require('../models/preference.model');
 const User = require('../models/user.model');
 
 const getMatchesForUser = async (userId) => {
-  const acceptedSent = await Interest.find({ sender: userId, status: 'accepted' })
+  // Get all accepted interests involving this user (either as sender or receiver)
+  const allAccepted = await Interest.find({
+    $or: [
+      { sender: userId, status: 'accepted' },
+      { receiver: userId, status: 'accepted' }
+    ]
+  })
+    .populate('sender', 'name idNumber role')
     .populate('receiver', 'name idNumber role')
     .lean();
 
-  const acceptedReceived = await Interest.find({ receiver: userId, status: 'accepted' })
-    .populate('sender', 'name idNumber role')
-    .lean();
-
-  const acceptedReceiverIds = new Set(
-    acceptedSent.map((item) => item.receiver._id.toString())
-  );
-
-  const matches = acceptedReceived
-    .filter((item) => acceptedReceiverIds.has(item.sender._id.toString()))
-    .map((item) => ({
-      _id: item.sender._id,
-      name: item.sender.name,
-      idNumber: item.sender.idNumber,
-      role: item.sender.role,
+  // Extract the other user from each interest record
+  const matches = allAccepted.map((item) => {
+    const otherUser = item.sender._id.toString() === userId ? item.receiver : item.sender;
+    return {
+      _id: otherUser._id,
+      name: otherUser.name,
+      idNumber: otherUser.idNumber,
+      role: otherUser.role,
       matchedAt: item.updatedAt || item.createdAt,
-    }));
+    };
+  });
 
   return matches;
 };
@@ -44,8 +45,8 @@ const checkProfileMatch = (userProfile, candidateProfile, userPreference, candid
     if (userPreference.style && candidateProfile.style !== userPreference.style) return false;
     if (userPreference.preferredAppearance && candidateProfile.appearance !== userPreference.preferredAppearance) return false;
     if (userPreference.city && candidateProfile.city !== userPreference.city) return false;
-    if (userPreference.financialMin && candidateProfile.financialAmount < userPreference.financialMin) return false;
-    if (userPreference.financialMax && candidateProfile.financialAmount > userPreference.financialMax) return false;
+    if (userPreference.financialMin && candidateProfile.financialStatus && candidateProfile.financialStatus < userPreference.financialMin) return false;
+    if (userPreference.financialMax && candidateProfile.financialStatus && candidateProfile.financialStatus > userPreference.financialMax) return false;
   }
 
   // Check candidate's preferences against user's profile
@@ -57,8 +58,8 @@ const checkProfileMatch = (userProfile, candidateProfile, userPreference, candid
     if (candidatePreference.style && userProfile.style !== candidatePreference.style) return false;
     if (candidatePreference.preferredAppearance && userProfile.appearance !== candidatePreference.preferredAppearance) return false;
     if (candidatePreference.city && userProfile.city !== candidatePreference.city) return false;
-    if (candidatePreference.financialMin && userProfile.financialAmount < candidatePreference.financialMin) return false;
-    if (candidatePreference.financialMax && userProfile.financialAmount > candidatePreference.financialMax) return false;
+    if (candidatePreference.financialMin && userProfile.financialStatus && userProfile.financialStatus < candidatePreference.financialMin) return false;
+    if (candidatePreference.financialMax && userProfile.financialStatus && userProfile.financialStatus > candidatePreference.financialMax) return false;
   }
 
   return true;

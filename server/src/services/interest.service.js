@@ -51,8 +51,14 @@ const getOutgoingInterests = async (userId) => {
     .sort({ createdAt: -1 });
 };
 
-const approveToManager = async (senderId, receiverId, approverRole) => {
-  const interest = await Interest.findOne({ sender: senderId, receiver: receiverId });
+const approveToManager = async (userId, otherUserId, approverRole) => {
+  // Find interest in either direction
+  const interest = await Interest.findOne({
+    $or: [
+      { sender: userId, receiver: otherUserId },
+      { sender: otherUserId, receiver: userId }
+    ]
+  });
   if (!interest) {
     const error = new Error('Interest not found');
     error.statusCode = 404;
