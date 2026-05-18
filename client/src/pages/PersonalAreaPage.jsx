@@ -5,6 +5,7 @@ import {
   Button,
   Container,
   FormControl,
+  Input,
   InputLabel,
   MenuItem,
   Paper,
@@ -29,6 +30,9 @@ export default function PersonalAreaPage() {
   const [successOpen, setSuccessOpen] = useState(false);
   const [profileSubmitting, setProfileSubmitting] = useState(false);
   const [preferencesSubmitting, setPreferencesSubmitting] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -95,6 +99,23 @@ export default function PersonalAreaPage() {
     },
   });
 
+  const normalizeFileUrl = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    if (path.startsWith("/")) return `${baseUrl}${path}`;
+    if (path.startsWith("uploads/")) return `${baseUrl}/${path}`;
+    return `${baseUrl}/uploads/${path}`;
+  };
+
+  const handleImageReplace = (event) => {
+    setImageFile(event.target.files?.[0] ?? null);
+  };
+
+  const handlePdfReplace = (event) => {
+    setPdfFile(event.target.files?.[0] ?? null);
+  };
+
   useEffect(() => {
     if (!token) {
       setLoadingError("נדרש אימות כדי לטעון נתונים");
@@ -115,6 +136,7 @@ export default function PersonalAreaPage() {
         if (profileResult.status === "fulfilled") {
           const profileResponse = profileResult.value;
           const profile = profileResponse?.profile ?? profileResponse;
+          setProfileData(profile);
           resetProfile({
             gender: profile?.gender ?? "",
             ethnicity: profile?.ethnicity ?? "",
@@ -182,11 +204,33 @@ export default function PersonalAreaPage() {
       description: data.description || undefined,
     };
 
+    const hasFiles = Boolean(imageFile || pdfFile);
+    const requestData = hasFiles ? new FormData() : payload;
+
+    if (hasFiles) {
+      requestData.append("gender", data.gender || "");
+      requestData.append("ethnicity", data.ethnicity || "");
+      requestData.append("age", data.age ?? "");
+      requestData.append("city", data.city || "");
+      requestData.append("height", data.height ?? "");
+      requestData.append("style", data.style || "");
+      requestData.append("appearance", data.appearance || "");
+      requestData.append("financialRequirement", data.financialRequirement ?? "");
+      requestData.append("description", data.description || "");
+      if (imageFile) {
+        requestData.append("image", imageFile);
+      }
+      if (pdfFile) {
+        requestData.append("resumePdf", pdfFile);
+      }
+    }
+
     try {
-      const response = await updateProfile(payload, token);
+      const response = await updateProfile(requestData, token);
       const updatedProfile = response?.profile ?? response;
       setProfileSuccess("הפרופיל עודכן בהצלחה");
         setSuccessOpen(true);
+      setProfileData(updatedProfile);
       resetProfile({
         gender: updatedProfile?.gender ?? "",
         ethnicity: updatedProfile?.ethnicity ?? "",
@@ -295,6 +339,33 @@ export default function PersonalAreaPage() {
               <Typography variant="h5" gutterBottom>
                 עדכון פרופיל
               </Typography>
+              {profileData?.image || profileData?.resumePdf ? (
+                <Box sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 2, mb: 2 }}>
+                  {profileData?.image && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1">תמונת פרופיל נוכחית</Typography>
+                      <Box
+                        component="img"
+                        src={normalizeFileUrl(profileData.image)}
+                        alt="תמונת פרופיל נוכחית"
+                        sx={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", mt: 1 }}
+                      />
+                    </Box>
+                  )}
+                  {profileData?.resumePdf && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                      <Typography variant="subtitle1">קובץ PDF נוכחי</Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => window.open(normalizeFileUrl(profileData.resumePdf), "_blank")}
+                      >
+                        צפייה בקובץ PDF
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              ) : null}
               <Box component="form" onSubmit={handleProfileSubmit(onUpdateProfile)} noValidate sx={{ display: "grid", gap: 2 }}>
                 <Controller
                   name="gender"
@@ -397,6 +468,30 @@ export default function PersonalAreaPage() {
                   control={profileControl}
                   render={({ field }) => <TextField {...field} label="תיאור" multiline minRows={3} fullWidth />}
                 />
+
+                <Box sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    החלפת תמונת פרופיל
+                  </Typography>
+                  <Input type="file" inputProps={{ accept: "image/*" }} onChange={handleImageReplace} />
+                  {imageFile && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      קובץ נבחר: {imageFile.name}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Box sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    החלפת קובץ PDF
+                  </Typography>
+                  <Input type="file" inputProps={{ accept: ".pdf,application/pdf" }} onChange={handlePdfReplace} />
+                  {pdfFile && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      קובץ נבחר: {pdfFile.name}
+                    </Typography>
+                  )}
+                </Box>
 
                 <Button variant="contained" color="primary" type="submit" disabled={profileSubmitting}>
                   {profileSubmitting ? "שולח..." : "שמור עדכון פרופיל"}

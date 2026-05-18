@@ -7,6 +7,7 @@ import ProfilePage from "../pages/ProfilePage";
 import PersonalAreaPage from "../pages/PersonalAreaPage";
 import MatchesPage from "../pages/MatchesPage";
 import InterestsPage from "../pages/InterestsPage";
+import AdminPage from "../pages/AdminPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function AppRoutes() {
@@ -62,6 +63,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <InterestsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminPage />
           </ProtectedRoute>
         }
       />
