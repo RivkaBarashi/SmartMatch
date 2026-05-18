@@ -24,6 +24,9 @@ const profileSchema = new mongoose.Schema(
     occupation: { type: String },
     financialCapabilities: { type: String },
 
+    // Financial status for matching (numeric scale)
+    financialStatus: { type: Number },
+
     resumePdf: { type: String },
     image: { type: String },
   },
