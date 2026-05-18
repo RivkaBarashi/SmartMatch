@@ -64,6 +64,7 @@ export default function LoginPage() {
         const token = res.token;
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(res.user));
+        localStorage.setItem("role", data.user.role);                    
 
         // Check if login credentials match admin credentials
         const isAdmin = data.idNumber?.trim() === ADMIN_CREDENTIALS.idNumber &&

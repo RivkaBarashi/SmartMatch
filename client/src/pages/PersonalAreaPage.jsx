@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import {
   Box,
@@ -19,12 +20,13 @@ import { getMyProfile, updateProfile } from "../services/profile.service.js";
 import { getMyPreferences, updatePreferences } from "../services/preference.service.js";
 
 export default function PersonalAreaPage() {
+  const navigate = useNavigate();
+  const role = localStorage.getItem("role");
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPreferences, setIsEditingPreferences] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [loadingError, setLoadingError] = useState("");
-  const [profileSuccess, setProfileSuccess] = useState("");
-  const [preferencesSuccess, setPreferencesSuccess] = useState("");
   const [apiError, setApiError] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
   const [profileSubmitting, setProfileSubmitting] = useState(false);
@@ -61,7 +63,6 @@ export default function PersonalAreaPage() {
     control: profileControl,
     handleSubmit: handleProfileSubmit,
     reset: resetProfile,
-    formState: { errors: profileErrors },
   } = useForm({
     defaultValues: {
       gender: "",
@@ -80,7 +81,6 @@ export default function PersonalAreaPage() {
     control: preferencesControl,
     handleSubmit: handlePreferencesSubmit,
     reset: resetPreferences,
-    formState: { errors: preferencesErrors },
   } = useForm({
     defaultValues: {
       ageMin: "",
@@ -96,6 +96,11 @@ export default function PersonalAreaPage() {
   });
 
   useEffect(() => {
+    if (role === "admin") {
+      setLoadingData(false);
+      return;
+    }
+
     if (!token) {
       setLoadingError("נדרש אימות כדי לטעון נתונים");
       setLoadingData(false);
@@ -108,13 +113,13 @@ export default function PersonalAreaPage() {
 
       try {
         const [profileResult, preferencesResult] = await Promise.allSettled([
-          getMyProfile(token),
-          getMyPreferences(token),
+          getMyProfile(),
+          getMyPreferences(),
         ]);
 
         if (profileResult.status === "fulfilled") {
-          const profileResponse = profileResult.value;
-          const profile = profileResponse?.profile ?? profileResponse;
+          const profile = profileResult.value?.profile ?? profileResult.value;
+
           resetProfile({
             gender: profile?.gender ?? "",
             ethnicity: profile?.ethnicity ?? "",
@@ -129,8 +134,9 @@ export default function PersonalAreaPage() {
         }
 
         if (preferencesResult.status === "fulfilled") {
-          const preferencesResponse = preferencesResult.value;
-          const preferences = preferencesResponse?.preferences ?? preferencesResponse;
+          const preferences =
+            preferencesResult.value?.preferences ?? preferencesResult.value;
+
           resetPreferences({
             ageMin: preferences?.ageMin?.toString() ?? "",
             ageMax: preferences?.ageMax?.toString() ?? "",
@@ -144,31 +150,29 @@ export default function PersonalAreaPage() {
           });
         }
 
-        if (profileResult.status === "rejected" || preferencesResult.status === "rejected") {
-          const rejected = [profileResult, preferencesResult].find((item) => item.status === "rejected");
-          const errorMessage = rejected?.reason?.response?.data?.message || rejected?.reason?.message;
-          setLoadingError(errorMessage || "לא ניתן לטעון את הנתונים האישיים");
+        if (
+          profileResult.status === "rejected" ||
+          preferencesResult.status === "rejected"
+        ) {
+          setLoadingError("לא ניתן לטעון את הנתונים האישיים");
         }
       } catch (error) {
-        setLoadingError(error?.response?.data?.message || error?.message || "אירעה שגיאה בטעינת הנתונים");
+        setLoadingError(
+          error?.response?.data?.message ||
+            error?.message ||
+            "אירעה שגיאה בטעינת הנתונים"
+        );
       } finally {
         setLoadingData(false);
       }
     };
 
     loadData();
-  }, [token, resetProfile, resetPreferences]);
+  }, [token, role, resetProfile, resetPreferences]);
 
   const onUpdateProfile = async (data) => {
     setApiError("");
-    setProfileSuccess("");
     setProfileSubmitting(true);
-
-    if (!token) {
-      setApiError("נדרש אימות לעדכון הפרופיל");
-      setProfileSubmitting(false);
-      return;
-    }
 
     const payload = {
       gender: data.gender || undefined,
@@ -178,15 +182,17 @@ export default function PersonalAreaPage() {
       height: data.height === "" ? undefined : Number(data.height),
       style: data.style || undefined,
       appearance: data.appearance || undefined,
-      financialRequirement: data.financialRequirement === "" ? undefined : Number(data.financialRequirement),
+      financialRequirement:
+        data.financialRequirement === ""
+          ? undefined
+          : Number(data.financialRequirement),
       description: data.description || undefined,
     };
 
     try {
-      const response = await updateProfile(payload, token);
+      const response = await updateProfile(payload);
       const updatedProfile = response?.profile ?? response;
-      setProfileSuccess("הפרופיל עודכן בהצלחה");
-        setSuccessOpen(true);
+
       resetProfile({
         gender: updatedProfile?.gender ?? "",
         ethnicity: updatedProfile?.ethnicity ?? "",
@@ -195,13 +201,19 @@ export default function PersonalAreaPage() {
         height: updatedProfile?.height?.toString() ?? "",
         style: updatedProfile?.style ?? "",
         appearance: updatedProfile?.appearance ?? "",
-        financialRequirement: updatedProfile?.financialRequirement?.toString() ?? "",
+        financialRequirement:
+          updatedProfile?.financialRequirement?.toString() ?? "",
         description: updatedProfile?.description ?? "",
       });
-        // Close the edit section only after successful update
-        setIsEditingProfile(false);
+
+      setSuccessOpen(true);
+      setIsEditingProfile(false);
     } catch (error) {
-      setApiError(error?.response?.data?.message || error?.message || "שגיאה בעדכון הפרופיל");
+      setApiError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "שגיאה בעדכון הפרופיל"
+      );
     } finally {
       setProfileSubmitting(false);
     }
@@ -209,14 +221,7 @@ export default function PersonalAreaPage() {
 
   const onUpdatePreferences = async (data) => {
     setApiError("");
-    setPreferencesSuccess("");
     setPreferencesSubmitting(true);
-
-    if (!token) {
-      setApiError("נדרש אימות לעדכון ההעדפות");
-      setPreferencesSubmitting(false);
-      return;
-    }
 
     const payload = {
       ageMin: data.ageMin === "" ? undefined : Number(data.ageMin),
@@ -226,15 +231,16 @@ export default function PersonalAreaPage() {
       heightMax: data.heightMax === "" ? undefined : Number(data.heightMax),
       style: data.style || undefined,
       preferredAppearance: data.preferredAppearance || undefined,
-      financialMin: data.financialMin === "" ? undefined : Number(data.financialMin),
-      financialMax: data.financialMax === "" ? undefined : Number(data.financialMax),
+      financialMin:
+        data.financialMin === "" ? undefined : Number(data.financialMin),
+      financialMax:
+        data.financialMax === "" ? undefined : Number(data.financialMax),
     };
 
     try {
-      const response = await updatePreferences(payload, token);
+      const response = await updatePreferences(payload);
       const updatedPreferences = response?.preferences ?? response;
-      setPreferencesSuccess("העדפות עודכנו בהצלחה");
-        setSuccessOpen(true);
+
       resetPreferences({
         ageMin: updatedPreferences?.ageMin?.toString() ?? "",
         ageMax: updatedPreferences?.ageMax?.toString() ?? "",
@@ -246,10 +252,15 @@ export default function PersonalAreaPage() {
         financialMin: updatedPreferences?.financialMin?.toString() ?? "",
         financialMax: updatedPreferences?.financialMax?.toString() ?? "",
       });
-        // Close the edit section only after successful update
-        setIsEditingPreferences(false);
+
+      setSuccessOpen(true);
+      setIsEditingPreferences(false);
     } catch (error) {
-      setApiError(error?.response?.data?.message || error?.message || "שגיאה בעדכון ההעדפות");
+      setApiError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "שגיאה בעדכון ההעדפות"
+      );
     } finally {
       setPreferencesSubmitting(false);
     }
@@ -258,19 +269,59 @@ export default function PersonalAreaPage() {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        האזור האישי
+        {role === "admin" ? "אזור מנהל" : "האזור האישי"}
       </Typography>
 
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-        <Button variant="contained" color="primary" onClick={() => setIsEditingProfile((prev) => !prev)}>
-          עדכון פרופיל
-        </Button>
-        <Button variant="contained" color="primary" onClick={() => setIsEditingPreferences((prev) => !prev)}>
-          עדכון העדפות
-        </Button>
+        {role === "admin" ? (
+          <>
+            <Button variant="contained" onClick={() => navigate("/admin")}>
+              אזור מנהל
+            </Button>
+
+            <Button variant="contained" onClick={() => navigate("/admin/users")}>
+              כל המשתמשים
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={() => navigate("/admin/pending-matches")}
+            >
+              הצעות שממתינות לטיפול
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="contained"
+              onClick={() => setIsEditingProfile((prev) => !prev)}
+            >
+              עדכון פרופיל
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={() => setIsEditingPreferences((prev) => !prev)}
+            >
+              עדכון העדפות
+            </Button>
+
+            <Button variant="contained" onClick={() => navigate("/matches")}>
+              התאמות
+            </Button>
+
+            <Button variant="contained" onClick={() => navigate("/interests")}>
+              התעניינויות
+            </Button>
+          </>
+        )}
       </Box>
 
-      {loadingData ? (
+      {role === "admin" ? (
+        <Typography>
+          בחרי פעולה מתפריט המנהל.
+        </Typography>
+      ) : loadingData ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
@@ -288,21 +339,25 @@ export default function PersonalAreaPage() {
             </Typography>
           )}
 
-              {/* success notifications are shown via Snackbar */}
-
           {isEditingProfile && (
             <Paper sx={{ p: 3, mb: 4 }} elevation={2}>
               <Typography variant="h5" gutterBottom>
                 עדכון פרופיל
               </Typography>
-              <Box component="form" onSubmit={handleProfileSubmit(onUpdateProfile)} noValidate sx={{ display: "grid", gap: 2 }}>
+
+              <Box
+                component="form"
+                onSubmit={handleProfileSubmit(onUpdateProfile)}
+                noValidate
+                sx={{ display: "grid", gap: 2 }}
+              >
                 <Controller
                   name="gender"
                   control={profileControl}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel id="personal-gender-label">מגדר</InputLabel>
-                      <Select labelId="personal-gender-label" label="מגדר" {...field}>
+                      <InputLabel>מגדר</InputLabel>
+                      <Select label="מגדר" {...field}>
                         <MenuItem value="">לא נבחר</MenuItem>
                         {genderOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
@@ -319,8 +374,8 @@ export default function PersonalAreaPage() {
                   control={profileControl}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel id="personal-ethnicity-label">עדה</InputLabel>
-                      <Select labelId="personal-ethnicity-label" label="עדה" {...field}>
+                      <InputLabel>עדה</InputLabel>
+                      <Select label="עדה" {...field}>
                         <MenuItem value="">לא נבחר</MenuItem>
                         {ethnicityOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
@@ -335,19 +390,30 @@ export default function PersonalAreaPage() {
                 <Controller
                   name="age"
                   control={profileControl}
-                  render={({ field }) => <TextField {...field} label="גיל" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField {...field} label="גיל" type="number" fullWidth />
+                  )}
                 />
 
                 <Controller
                   name="city"
                   control={profileControl}
-                  render={({ field }) => <TextField {...field} label="עיר" fullWidth />}
+                  render={({ field }) => (
+                    <TextField {...field} label="עיר" fullWidth />
+                  )}
                 />
 
                 <Controller
                   name="height"
                   control={profileControl}
-                  render={({ field }) => <TextField {...field} label="גובה" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="גובה"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
@@ -355,8 +421,8 @@ export default function PersonalAreaPage() {
                   control={profileControl}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel id="personal-style-label">סגנון</InputLabel>
-                      <Select labelId="personal-style-label" label="סגנון" {...field}>
+                      <InputLabel>סגנון</InputLabel>
+                      <Select label="סגנון" {...field}>
                         <MenuItem value="">לא נבחר</MenuItem>
                         {styleOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
@@ -373,8 +439,8 @@ export default function PersonalAreaPage() {
                   control={profileControl}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel id="personal-appearance-label">מראה חיצוני</InputLabel>
-                      <Select labelId="personal-appearance-label" label="מראה חיצוני" {...field}>
+                      <InputLabel>מראה חיצוני</InputLabel>
+                      <Select label="מראה חיצוני" {...field}>
                         <MenuItem value="">לא נבחר</MenuItem>
                         {appearanceOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
@@ -389,16 +455,35 @@ export default function PersonalAreaPage() {
                 <Controller
                   name="financialRequirement"
                   control={profileControl}
-                  render={({ field }) => <TextField {...field} label="מצב כלכלי" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="מצב כלכלי"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
                   name="description"
                   control={profileControl}
-                  render={({ field }) => <TextField {...field} label="תיאור" multiline minRows={3} fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="תיאור"
+                      multiline
+                      minRows={3}
+                      fullWidth
+                    />
+                  )}
                 />
 
-                <Button variant="contained" color="primary" type="submit" disabled={profileSubmitting}>
+                <Button
+                  variant="contained"
+                  type="submit"
+                  disabled={profileSubmitting}
+                >
                   {profileSubmitting ? "שולח..." : "שמור עדכון פרופיל"}
                 </Button>
               </Box>
@@ -410,35 +495,71 @@ export default function PersonalAreaPage() {
               <Typography variant="h5" gutterBottom>
                 עדכון העדפות
               </Typography>
-              <Box component="form" onSubmit={handlePreferencesSubmit(onUpdatePreferences)} noValidate sx={{ display: "grid", gap: 2 }}>
+
+              <Box
+                component="form"
+                onSubmit={handlePreferencesSubmit(onUpdatePreferences)}
+                noValidate
+                sx={{ display: "grid", gap: 2 }}
+              >
                 <Controller
                   name="ageMin"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="גיל מינימום" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="גיל מינימום"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
                   name="ageMax"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="גיל מקסימום" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="גיל מקסימום"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
                   name="city"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="עיר" fullWidth />}
+                  render={({ field }) => (
+                    <TextField {...field} label="עיר" fullWidth />
+                  )}
                 />
 
                 <Controller
                   name="heightMin"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="גובה מינימום" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="גובה מינימום"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
                   name="heightMax"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="גובה מקסימום" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="גובה מקסימום"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
@@ -446,8 +567,8 @@ export default function PersonalAreaPage() {
                   control={preferencesControl}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel id="preferences-style-label">סגנון</InputLabel>
-                      <Select labelId="preferences-style-label" label="סגנון" {...field}>
+                      <InputLabel>סגנון</InputLabel>
+                      <Select label="סגנון" {...field}>
                         <MenuItem value="">לא נבחר</MenuItem>
                         {styleOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
@@ -464,8 +585,8 @@ export default function PersonalAreaPage() {
                   control={preferencesControl}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel id="preferences-appearance-label">מראה חיצוני מועדף</InputLabel>
-                      <Select labelId="preferences-appearance-label" label="מראה חיצוני מועדף" {...field}>
+                      <InputLabel>מראה חיצוני מועדף</InputLabel>
+                      <Select label="מראה חיצוני מועדף" {...field}>
                         <MenuItem value="">לא נבחר</MenuItem>
                         {appearanceOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
@@ -480,28 +601,51 @@ export default function PersonalAreaPage() {
                 <Controller
                   name="financialMin"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="מצב כלכלי מינימום" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="מצב כלכלי מינימום"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
                 <Controller
                   name="financialMax"
                   control={preferencesControl}
-                  render={({ field }) => <TextField {...field} label="מצב כלכלי מקסימום" type="number" fullWidth />}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="מצב כלכלי מקסימום"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
                 />
 
-                <Button variant="contained" color="primary" type="submit" disabled={preferencesSubmitting}>
+                <Button
+                  variant="contained"
+                  type="submit"
+                  disabled={preferencesSubmitting}
+                >
                   {preferencesSubmitting ? "שולח..." : "שמור עדכון העדפות"}
                 </Button>
               </Box>
             </Paper>
           )}
+
           <Snackbar
             open={successOpen}
             autoHideDuration={10000}
             onClose={() => setSuccessOpen(false)}
             anchorOrigin={{ vertical: "top", horizontal: "center" }}
           >
-            <Alert onClose={() => setSuccessOpen(false)} severity="success" sx={{ width: "100%" }}>
+            <Alert
+              onClose={() => setSuccessOpen(false)}
+              severity="success"
+              sx={{ width: "100%" }}
+            >
               עודכן בהצלחה
             </Alert>
           </Snackbar>

@@ -1,7 +1,7 @@
 ﻿import api from "../api/axios.js";
 
 export const createPreferences = async (data, token) => {
-  const response = await api.post("/preference", data, {
+  const response = await api.post("/api/preference", data, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -10,7 +10,7 @@ export const createPreferences = async (data, token) => {
 };
 
 export const getMyPreferences = async (token) => {
-  const response = await api.get("/preference/me", {
+  const response = await api.get("/api/preference/me", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
