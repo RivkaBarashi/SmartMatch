@@ -29,7 +29,7 @@ import {
 } from "../services/preference.service.js";
 
 const getServerBaseUrl = () => {
-  const base = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const base = import.meta.env.VITE_API_URL || "http://127.0.0.1:3000";
   return base.replace(/\/api\/?$/, "");
 };
 
@@ -113,6 +113,26 @@ export default function PersonalAreaPage() {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
+
+  const storedUserName = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"))?.name || "";
+    } catch {
+      return "";
+    }
+  })();
+
+  const displayName = storedUserName || profileData?.name || profileData?.user?.name || "לא צוין";
+
+  const previewButtonSx = {
+    borderColor: '#1f4aac',
+    color: '#1f4aac',
+    '&:hover': { bgcolor: 'rgba(31,63,149,0.05)' },
+    width: 170,
+    minWidth: 170,
+    py: 1,
+    textTransform: 'none',
+  };
 
   const {
     control: profileControl,
@@ -352,7 +372,7 @@ export default function PersonalAreaPage() {
           אזור מנהל
         </Typography>
 
-        <Stack direction="row" spacing={2} flexWrap="wrap">
+          <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }}>
           <Button variant="contained" onClick={() => navigate("/admin")}>
             אזור מנהל
           </Button>
@@ -373,8 +393,21 @@ export default function PersonalAreaPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container
+      maxWidth="md"
+      sx={{
+        py: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        sx={{ color: "#1f3f95", textAlign: "center", fontWeight: 700 }}
+      >
         האזור האישי
       </Typography>
 
@@ -384,10 +417,19 @@ export default function PersonalAreaPage() {
         </Alert>
       )}
 
-      <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3 }}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ mb: 3, flexWrap: "wrap", justifyContent: "center", width: "100%" }}
+      >
         <Button
           variant="contained"
           onClick={() => setIsEditingProfile((prev) => !prev)}
+          sx={{
+            bgcolor: "#1f4aac",
+            color: "#f8d25d",
+            '&:hover': { bgcolor: '#163e86' },
+          }}
         >
           {profileExists ? "עדכון פרופיל" : "יצירת פרופיל"}
         </Button>
@@ -395,58 +437,113 @@ export default function PersonalAreaPage() {
         <Button
           variant="contained"
           onClick={() => setIsEditingPreferences((prev) => !prev)}
+          sx={{
+            bgcolor: "#1f4aac",
+            color: "#f8d25d",
+            '&:hover': { bgcolor: '#163e86' },
+          }}
         >
           {preferencesExists ? "עדכון העדפות" : "יצירת העדפות"}
         </Button>
 
-        <Button variant="contained" onClick={() => navigate("/matches")}>
+<Button
+          variant="contained"
+          onClick={() => navigate("/matches")}
+          sx={{
+            bgcolor: "#1f4aac",
+            color: "#f8d25d",
+            '&:hover': { bgcolor: '#163e86' },
+          }}
+        >
           התאמות
         </Button>
 
-        <Button variant="contained" onClick={() => navigate("/interests")}>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/interests")}
+          sx={{
+            bgcolor: "#1f4aac",
+            color: "#f8d25d",
+            '&:hover': { bgcolor: '#163e86' },
+          }}
+        >
           התעניינויות
         </Button>
       </Stack>
 
-      <Paper sx={{ p: 3, mb: 3 }} elevation={2}>
-        <Typography variant="h5" gutterBottom>
+      <Paper
+        sx={{
+          p: 3,
+          mb: 3,
+          textAlign: "center",
+          bgcolor: "#f8fbff",
+          border: "1px solid rgba(31,63,149,0.12)",
+        }}
+        elevation={2}
+      >
+        <Typography variant="h5" gutterBottom sx={{ textAlign: "center", color: '#1f3f95' }}>
           הפרופיל שלי
         </Typography>
 
         {profileExists ? (
-          <Stack spacing={1}>
-            <Typography>עיר: {profileData?.city || "לא צוין"}</Typography>
+          <Stack spacing={1} alignItems="center">
+            <Typography>שם: {displayName}</Typography>
             <Typography>גיל: {profileData?.age || "לא צוין"}</Typography>
             <Typography>גובה: {profileData?.height || "לא צוין"}</Typography>
             <Typography>סגנון: {profileData?.style || "לא צוין"}</Typography>
             <Typography>תיאור: {profileData?.description || "לא צוין"}</Typography>
-
-            {profileData?.image && (
-              <Button
-                variant="outlined"
-                href={normalizeFileUrl(profileData.image)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                צפייה בתמונה
-              </Button>
-            )}
-
-            {profileData?.resumePdf && (
-              <Button
-                variant="outlined"
-                href={normalizeFileUrl(profileData.resumePdf)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                צפייה בקובץ PDF
-              </Button>
-            )}
           </Stack>
         ) : (
           <Typography>עדיין לא נוצר פרופיל.</Typography>
         )}
       </Paper>
+
+      {profileExists && (
+        <Paper
+          sx={{
+            p: 3,
+            mb: 3,
+            textAlign: "center",
+            bgcolor: "#f8fbff",
+            border: "1px solid rgba(31,63,149,0.12)",
+          }}
+          elevation={2}
+        >
+          <Typography variant="h5" gutterBottom sx={{ textAlign: "center", color: '#1f3f95' }}>
+            קבצים
+          </Typography>
+
+          <Stack spacing={2} alignItems="center">
+            {profileData?.image ? (
+              <Button
+                variant="outlined"
+                href={normalizeFileUrl(profileData.image)}
+                target="_blank"
+                rel="noreferrer"
+                sx={previewButtonSx}
+              >
+                צפייה בתמונה
+              </Button>
+            ) : (
+              <Typography sx={{ color: '#999' }}>לא הוערה תמונה</Typography>
+            )}
+
+            {profileData?.resumePdf ? (
+              <Button
+                variant="outlined"
+                href={normalizeFileUrl(profileData.resumePdf)}
+                target="_blank"
+                rel="noreferrer"
+                sx={previewButtonSx}
+              >
+                צפייה בקובץ PDF
+              </Button>
+            ) : (
+              <Typography sx={{ color: '#999' }}>לא הועלה קובץ PDF</Typography>
+            )}
+          </Stack>
+        </Paper>
+      )}
 
       {isEditingProfile && (
         <Paper sx={{ p: 3, mb: 4 }} elevation={2}>
@@ -622,33 +719,61 @@ export default function PersonalAreaPage() {
               )}
             />
 
-            <Button variant="outlined" component="label">
-              העלאת תמונה
-              <input
-                hidden
-                type="file"
-                accept="image/*"
-                onChange={(event) =>
-                  setImageFile(event.target.files?.[0] || null)
-                }
-              />
-            </Button>
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+              <Button variant="outlined" component="label">
+                העלאת תמונה
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    setImageFile(event.target.files?.[0] || null)
+                  }
+                />
+              </Button>
 
-            {imageFile && <Typography>{imageFile.name}</Typography>}
+              {imageFile && <Typography>{imageFile.name}</Typography>}
 
-            <Button variant="outlined" component="label">
-              העלאת PDF
-              <input
-                hidden
-                type="file"
-                accept="application/pdf"
-                onChange={(event) =>
-                  setPdfFile(event.target.files?.[0] || null)
-                }
-              />
-            </Button>
+              {profileData?.image && !imageFile && (
+                <Button
+                  variant="outlined"
+                  href={normalizeFileUrl(profileData.image)}
+                  target="_blank"
+                  rel="noreferrer"
+                  sx={previewButtonSx}
+                >
+                  צפייה בתמונה הנוכחית
+                </Button>
+              )}
+            </Box>
 
-            {pdfFile && <Typography>{pdfFile.name}</Typography>}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+              <Button variant="outlined" component="label">
+                העלאת PDF
+                <input
+                  hidden
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(event) =>
+                    setPdfFile(event.target.files?.[0] || null)
+                  }
+                />
+              </Button>
+
+              {pdfFile && <Typography>{pdfFile.name}</Typography>}
+
+              {profileData?.resumePdf && !pdfFile && (
+                <Button
+                  variant="outlined"
+                  href={normalizeFileUrl(profileData.resumePdf)}
+                  target="_blank"
+                  rel="noreferrer"
+                  sx={previewButtonSx}
+                >
+                  צפייה בקובץ PDF הנוכחי
+                </Button>
+              )}
+            </Box>
 
             <Button
               variant="contained"

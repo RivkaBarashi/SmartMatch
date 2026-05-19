@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -8,13 +8,14 @@ import {
   Container,
   FormControl,
   FormHelperText,
-  Input,
+  Grid,
   InputLabel,
   MenuItem,
   Select,
   TextField,
   Typography,
 } from "@mui/material";
+import { CloudUpload } from "@mui/icons-material";
 import { createProfile } from "../services/profile.service.js";
 
 const genderOptions = [
@@ -42,13 +43,55 @@ const appearanceOptions = [
   { value: "chubby", label: "שמן" },
 ];
 
+const fieldSx = {
+  width: "100%",
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 3,
+    minHeight: 56,
+  },
+  '& .MuiInputBase-input': {
+    py: 1.5,
+  },
+  // Ensure Selects match TextField height and vertical alignment
+  '& .MuiSelect-select': {
+    display: 'flex',
+    alignItems: 'center',
+    height: 56,
+    padding: '0 14px',
+    boxSizing: 'border-box',
+  },
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderRadius: 3,
+  },
+};
+
+const selectSx = {
+  display: 'flex',
+  alignItems: 'center',
+  minHeight: 56,
+  height: 56,
+  px: 1.75,
+  boxSizing: 'border-box',
+};
+
+const previewButtonSx = {
+  minWidth: 130,
+  height: 40,
+  textTransform: 'none',
+  borderRadius: 2,
+  px: 2,
+};
+
 export default function ProfilePage() {
   const navigate = useNavigate();
+
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [pdfPreview, setPdfPreview] = useState(null);
   const [imageError, setImageError] = useState("");
   const [resumeError, setResumeError] = useState("");
 
@@ -104,6 +147,33 @@ export default function ProfilePage() {
     setPdfFile(file);
   };
 
+  // Create object URLs for previews and clean up
+  useEffect(() => {
+    let imgUrl;
+    if (imageFile) {
+      imgUrl = URL.createObjectURL(imageFile);
+      setImagePreview(imgUrl);
+    } else {
+      setImagePreview(null);
+    }
+    return () => {
+      if (imgUrl) URL.revokeObjectURL(imgUrl);
+    };
+  }, [imageFile]);
+
+  useEffect(() => {
+    let pdfUrl;
+    if (pdfFile) {
+      pdfUrl = URL.createObjectURL(pdfFile);
+      setPdfPreview(pdfUrl);
+    } else {
+      setPdfPreview(null);
+    }
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfFile]);
+
   const onSubmit = async (data) => {
     setApiError("");
     setSuccessMessage("");
@@ -152,24 +222,15 @@ export default function ProfilePage() {
       requestData.append("appearance", data.appearance || "");
       requestData.append("financialRequirement", data.financialRequirement ?? "");
       requestData.append("description", data.description || "");
-      if (imageFile) {
-        requestData.append("image", imageFile);
-      }
-      if (pdfFile) {
-        requestData.append("resumePdf", pdfFile);
-      }
+      if (imageFile) requestData.append("image", imageFile);
+      if (pdfFile) requestData.append("resumePdf", pdfFile);
     }
-
-    console.log("Profile payload:", hasFiles ? "FormData" : payload);
 
     try {
       const response = await createProfile(requestData, token);
-
-      console.log("Profile response:", response);
       setSuccessMessage("הפרופיל נוצר בהצלחה");
       setTimeout(() => navigate("/preferences"), 750);
     } catch (error) {
-      console.error("Create profile error:", error);
       const message = error?.response?.data?.message || error.message || "שגיאה בשמירת הפרופיל";
       setApiError(message);
     } finally {
@@ -178,19 +239,30 @@ export default function ProfilePage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container
+      maxWidth="sm"
+      sx={{
+        backgroundColor: "#f3f6ff",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        py: 6,
+      }}
+    >
+      <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#1f3f95', textAlign: 'center' }}>
         יצירת פרופיל
       </Typography>
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: "grid", gap: 2 }}>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: "grid", gap: 2, width: "100%", maxWidth: 720, backgroundColor: '#ffffff', borderRadius: 3, boxShadow: '0 6px 20px rgba(31,63,149,0.08)', p: 4 }}>
         <Controller
           name="gender"
           control={control}
           rules={{ required: "מגדר הוא שדה חובה" }}
           render={({ field }) => (
-            <FormControl fullWidth error={Boolean(errors.gender)}>
+            <FormControl fullWidth error={Boolean(errors.gender)} sx={fieldSx}>
               <InputLabel id="gender-label">מגדר</InputLabel>
-              <Select labelId="gender-label" label="מגדר" {...field}>
+              <Select sx={selectSx} labelId="gender-label" label="מגדר" {...field}>
                 {genderOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -206,9 +278,9 @@ export default function ProfilePage() {
           name="ethnicity"
           control={control}
           render={({ field }) => (
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={fieldSx}>
               <InputLabel id="ethnicity-label">עדה</InputLabel>
-              <Select labelId="ethnicity-label" label="עדה" {...field}>
+              <Select sx={selectSx} labelId="ethnicity-label" label="עדה" {...field}>
                 <MenuItem value="">לא נבחר</MenuItem>
                 {ethnicityOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -235,6 +307,7 @@ export default function ProfilePage() {
               error={Boolean(errors.age)}
               helperText={errors.age ? errors.age.message : ""}
               fullWidth
+              sx={fieldSx}
             />
           )}
         />
@@ -250,6 +323,7 @@ export default function ProfilePage() {
               error={Boolean(errors.city)}
               helperText={errors.city ? errors.city.message : ""}
               fullWidth
+              sx={fieldSx}
             />
           )}
         />
@@ -257,9 +331,7 @@ export default function ProfilePage() {
         <Controller
           name="height"
           control={control}
-          rules={{
-            pattern: { value: /^[0-9]*$/, message: "הזן גובה תקין" },
-          }}
+          rules={{ pattern: { value: /^[0-9]*$/, message: "הזן גובה תקין" } }}
           render={({ field }) => (
             <TextField
               {...field}
@@ -268,52 +340,57 @@ export default function ProfilePage() {
               error={Boolean(errors.height)}
               helperText={errors.height ? errors.height.message : ""}
               fullWidth
+              sx={fieldSx}
             />
           )}
         />
 
-        <Controller
-          name="style"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth>
-              <InputLabel id="style-label">סגנון</InputLabel>
-              <Select labelId="style-label" label="סגנון" {...field}>
-                <MenuItem value="">לא נבחר</MenuItem>
-                {styleOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
+        <Grid container spacing={2} justifyContent="center" sx={{ width: "100%" }}>
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="style"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth sx={fieldSx}>
+                  <InputLabel id="style-label">סגנון</InputLabel>
+                  <Select sx={selectSx} labelId="style-label" label="סגנון" {...field}>
+                    <MenuItem value="">לא נבחר</MenuItem>
+                    {styleOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            />
+          </Grid>
 
-        <Controller
-          name="appearance"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth>
-              <InputLabel id="appearance-label">מראה חיצוני</InputLabel>
-              <Select labelId="appearance-label" label="מראה חיצוני" {...field}>
-                <MenuItem value="">לא נבחר</MenuItem>
-                {appearanceOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="appearance"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth sx={fieldSx}>
+                  <InputLabel id="appearance-label">מראה חיצוני</InputLabel>
+                  <Select sx={selectSx} labelId="appearance-label" label="מראה חיצוני" {...field}>
+                    <MenuItem value="">לא נבחר</MenuItem>
+                    {appearanceOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            />
+          </Grid>
+        </Grid>
 
         <Controller
           name="financialRequirement"
           control={control}
-          rules={{
-            pattern: { value: /^[0-9]*$/, message: "הזן מצב כלכלי תקין" },
-          }}
+          rules={{ pattern: { value: /^[0-9]*$/, message: "הזן מצב כלכלי תקין" } }}
           render={({ field }) => (
             <TextField
               {...field}
@@ -322,6 +399,7 @@ export default function ProfilePage() {
               error={Boolean(errors.financialRequirement)}
               helperText={errors.financialRequirement ? errors.financialRequirement.message : ""}
               fullWidth
+              sx={fieldSx}
             />
           )}
         />
@@ -339,53 +417,121 @@ export default function ProfilePage() {
               error={Boolean(errors.description)}
               helperText={errors.description ? errors.description.message : ""}
               fullWidth
+              sx={fieldSx}
             />
           )}
         />
 
-        <Box>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            תמונת פרופיל (אופציונלי)
-          </Typography>
-          <Input
-            type="file"
-            inputProps={{ accept: "image/*" }}
-            onChange={handleImageChange}
-            disableUnderline
-          />
-          {imageFile && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              נבחר קובץ: {imageFile.name}
+        <Grid container spacing={2} justifyContent="center" alignItems="stretch" sx={{ width: "100%" }}>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" sx={{ mb: 1, textAlign: "center" }}>
+              תמונת פרופיל (אופציונלי)
             </Typography>
-          )}
-          {imageError && (
-            <Typography color="error.main" variant="body2" sx={{ mt: 1 }}>
-              {imageError}
-            </Typography>
-          )}
-        </Box>
+            <Box
+              component="label"
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                p: 2,
+                borderRadius: 3,
+                border: "1px dashed rgba(63, 113, 213, 0.35)",
+                backgroundColor: "rgba(63, 113, 213, 0.06)",
+                cursor: "pointer",
+                textAlign: "center",
+                minHeight: 120,
+                transition: "background-color 0.2s ease",
+                '&:hover': {
+                  backgroundColor: "rgba(63, 113, 213, 0.1)",
+                },
+              }}
+            >
+              <input hidden type="file" accept="image/*" onChange={handleImageChange} />
+              <CloudUpload sx={{ color: "#3f71d5", fontSize: 28 }} />
+              <Typography sx={{ fontWeight: 600 }}>Upload Profile Image</Typography>
+              <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                PNG, JPG או GIF עד 5MB
+              </Typography>
+            </Box>
+            {imageFile && (
+              <Box sx={{ mt: 1, textAlign: 'center' }}>
+                <Typography variant="body2">נבחר קובץ: {imageFile.name}</Typography>
+                {imagePreview && (
+                  <Box component="img" src={imagePreview} alt="preview" sx={{ mt: 1, maxWidth: 240, maxHeight: 160, borderRadius: 1 }} />
+                )}
+                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                  {imagePreview && (
+                    <Button component="a" href={imagePreview} target="_blank" rel="noopener" size="small" sx={{ ...previewButtonSx, bgcolor: '#3f71d5', color: '#fff', '&:hover': { bgcolor: '#345ec0' } }}>צפה</Button>
+                  )}
+                  {imagePreview && (
+                    <Button component="a" href={imagePreview} download size="small" sx={previewButtonSx}>הורד</Button>
+                  )}
+                </Box>
+              </Box>
+            )}
+            {imageError && (
+              <Typography color="error.main" variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+                {imageError}
+              </Typography>
+            )}
+          </Grid>
 
-        <Box>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            קובץ קורות חיים PDF (אופציונלי)
-          </Typography>
-          <Input
-            type="file"
-            inputProps={{ accept: ".pdf,application/pdf" }}
-            onChange={handleResumeChange}
-            disableUnderline
-          />
-          {pdfFile && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              נבחר קובץ: {pdfFile.name}
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" sx={{ mb: 1, textAlign: "center" }}>
+              קובץ קורות חיים PDF (אופציונלי)
             </Typography>
-          )}
-          {resumeError && (
-            <Typography color="error.main" variant="body2" sx={{ mt: 1 }}>
-              {resumeError}
-            </Typography>
-          )}
-        </Box>
+            <Box
+              component="label"
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                p: 2,
+                borderRadius: 3,
+                border: "1px dashed rgba(63, 113, 213, 0.35)",
+                backgroundColor: "rgba(63, 113, 213, 0.06)",
+                cursor: "pointer",
+                textAlign: "center",
+                minHeight: 120,
+                transition: "background-color 0.2s ease",
+                '&:hover': {
+                  backgroundColor: "rgba(63, 113, 213, 0.1)",
+                },
+              }}
+            >
+              <input hidden type="file" accept=".pdf,application/pdf" onChange={handleResumeChange} />
+              <CloudUpload sx={{ color: "#3f71d5", fontSize: 28 }} />
+              <Typography sx={{ fontWeight: 600 }}>Upload Resume PDF</Typography>
+              <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                PDF עד 10MB
+              </Typography>
+            </Box>
+            {pdfFile && (
+              <Box sx={{ mt: 1, textAlign: 'center' }}>
+                <Typography variant="body2">נבחר קובץ: {pdfFile.name}</Typography>
+                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                  {pdfPreview && (
+                    <Button component="a" href={pdfPreview} target="_blank" rel="noopener" size="small" sx={{ ...previewButtonSx, bgcolor: '#3f71d5', color: '#fff', '&:hover': { bgcolor: '#345ec0' } }}>צפה</Button>
+                  )}
+                  {pdfPreview && (
+                    <Button component="a" href={pdfPreview} download size="small" sx={previewButtonSx}>הורד</Button>
+                  )}
+                </Box>
+              </Box>
+            )}
+            {resumeError && (
+              <Typography color="error.main" variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+                {resumeError}
+              </Typography>
+            )}
+          </Grid>
+        </Grid>
 
         {apiError && (
           <Alert severity="error" sx={{ mt: 1 }}>
@@ -398,7 +544,7 @@ export default function ProfilePage() {
           </Alert>
         )}
 
-        <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+        <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ mx: 'auto', display: 'block', bgcolor: '#f6b042', color: '#10233b', borderRadius: 30, px: 4, py: 1.25, '&:hover': { bgcolor: '#e0a22f' } }}>
           {isSubmitting ? "שולח..." : "שמור והמשך"}
         </Button>
       </Box>

@@ -16,7 +16,7 @@ export default function DashboardPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #fff5f7 0%, #f0f8ff 50%, #fff5f7 100%)",
+        background: "linear-gradient(135deg, #eef4ff 0%, #f7fbff 45%, #ffffff 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -26,23 +26,23 @@ export default function DashboardPage() {
         "&::before": {
           content: '""',
           position: "absolute",
-          top: "-50%",
-          right: "-20%",
-          width: "500px",
-          height: "500px",
+          top: "-45%",
+          right: "-15%",
+          width: "450px",
+          height: "450px",
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(255, 192, 203, 0.15) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(63, 113, 213, 0.14) 0%, transparent 70%)",
           pointerEvents: "none",
         },
         "&::after": {
           content: '""',
           position: "absolute",
-          bottom: "-30%",
-          left: "-15%",
-          width: "400px",
-          height: "400px",
+          bottom: "-25%",
+          left: "-10%",
+          width: "380px",
+          height: "380px",
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(173, 216, 230, 0.15) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(196, 162, 79, 0.12) 0%, transparent 70%)",
           pointerEvents: "none",
         },
       }}
@@ -58,9 +58,9 @@ export default function DashboardPage() {
         >
           {/* Decorative heart icons */}
           <Box sx={{ display: "flex", justifyContent: "center", gap: 1, mb: 3 }}>
-            <Favorite sx={{ color: "#ff69b4", fontSize: 28, opacity: 0.7 }} />
-            <Favorite sx={{ color: "#87ceeb", fontSize: 28, opacity: 0.5 }} />
-            <Favorite sx={{ color: "#ff1493", fontSize: 28, opacity: 0.6 }} />
+            <Favorite sx={{ color: "rgba(63,113,213,0.24)", fontSize: 28, opacity: 0.75 }} />
+            <Favorite sx={{ color: "rgba(196,162,79,0.24)", fontSize: 28, opacity: 0.75 }} />
+            <Favorite sx={{ color: "rgba(63,113,213,0.18)", fontSize: 28, opacity: 0.65 }} />
           </Box>
 
           {/* Main Title */}
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             sx={{
               fontWeight: 900,
               fontSize: { xs: "2.5rem", md: "3.5rem" },
-              background: "linear-gradient(135deg, #1a237e 0%, #c2185b 100%)",
+              background: "linear-gradient(135deg, #3f71d5 0%, #5c85db 50%, #c4a24f 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -98,13 +98,13 @@ export default function DashboardPage() {
           {/* Description Box */}
           <Paper
             sx={{
-              background: "rgba(255, 255, 255, 0.6)",
+              background: "rgba(255, 255, 255, 0.72)",
               backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 192, 203, 0.2)",
+              border: "1px solid rgba(63, 113, 213, 0.14)",
               borderRadius: "20px",
               p: 3,
               mb: 4,
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.05)",
+              boxShadow: "0 12px 36px rgba(15, 23, 42, 0.08)",
             }}
           >
             <Stack spacing={2}>
@@ -120,12 +120,12 @@ export default function DashboardPage() {
               </Typography>
               <Typography
                 sx={{
-            color: "#5B2EFF", // סגול מודרני יפה
+            color: "#3f71d5",
            fontSize: "1.05rem",
            fontWeight: 500,
             lineHeight: 1.8,
         textAlign: "center",
-        fontFamily: "Rubik, Arial, sans-serif",
+        fontFamily: "Inter, Arial, sans-serif",
         letterSpacing: "0.3px",
         padding: "10px 20px",
                 }}
@@ -136,8 +136,8 @@ export default function DashboardPage() {
 והכל בדיסקרטיות מלאה, בקצב שלכם ובשליטה שלכם.
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, pt: 1 }}>
-                <Favorite sx={{ color: "#ff69b4", fontSize: 20 }} />
-                <Typography sx={{ color: "#c2185b", fontWeight: 600, fontSize: "0.9rem" }}>
+                <Favorite sx={{ color: "rgba(63,113,213,0.5)", fontSize: 20 }} />
+                <Typography sx={{ color: "#3f71d5", fontWeight: 600, fontSize: "0.9rem" }}>
                  מפסיקים לבזבז זמן על הצעות לא רלוונטיות
 ועושים השתדלות ראויה לזיווג הגון בקרוב  
                 </Typography>
@@ -159,18 +159,18 @@ export default function DashboardPage() {
               onClick={() => navigate("/register")}
               startIcon={<LinkIcon />}
               sx={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: "linear-gradient(135deg, #3f71d5 0%, #5c85db 100%)",
                 color: "white",
                 borderRadius: "50px",
                 padding: "14px 40px",
                 fontSize: "1.05rem",
                 fontWeight: 600,
                 textTransform: "none",
-                boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)",
+                boxShadow: "0 10px 28px rgba(63, 113, 213, 0.22)",
                 transition: "all 0.3s ease",
                 "&:hover": {
                   transform: "translateY(-2px)",
-                  boxShadow: "0 12px 32px rgba(102, 126, 234, 0.45)",
+                  boxShadow: "0 12px 34px rgba(63, 113, 213, 0.3)",
                 },
                 "&:active": {
                   transform: "translateY(0px)",
@@ -186,20 +186,20 @@ export default function DashboardPage() {
               onClick={() => navigate("/login")}
               startIcon={<Favorite />}
               sx={{
-                color: "#c2185b",
-                borderColor: "#c2185b",
+                color: "#3f71d5",
+                borderColor: "#3f71d5",
                 borderRadius: "50px",
                 padding: "14px 40px",
                 fontSize: "1.05rem",
                 fontWeight: 600,
                 textTransform: "none",
-                border: "2.5px solid #c2185b",
+                border: "2px solid rgba(63, 113, 213, 0.45)",
+                backgroundColor: "rgba(63, 113, 213, 0.05)",
                 transition: "all 0.3s ease",
-                backgroundColor: "rgba(194, 24, 91, 0.03)",
                 "&:hover": {
-                  backgroundColor: "rgba(194, 24, 91, 0.08)",
+                  backgroundColor: "rgba(63, 113, 213, 0.14)",
                   transform: "translateY(-2px)",
-                  boxShadow: "0 8px 24px rgba(194, 24, 91, 0.2)",
+                  boxShadow: "0 8px 24px rgba(63, 113, 213, 0.12)",
                 },
                 "&:active": {
                   transform: "translateY(0px)",

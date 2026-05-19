@@ -19,7 +19,9 @@ const MatchesPage = () => {
       setError("");
 
       const data = await getMatches();
-      setMatches(normalizeCandidates(data));
+      const normalized = normalizeCandidates(data);
+      console.log("MatchesPage: loaded matches", normalized);
+      setMatches(normalized);
     } catch (err) {
       console.error("Failed to load matches:", err);
       setError(err.message || "לא הצלחנו לטעון התאמות");
@@ -32,13 +34,25 @@ const MatchesPage = () => {
     loadMatches();
   }, [loadMatches]);
 
+  const normalizeId = (item) => {
+    if (!item && item !== 0) return item;
+    // if item is an object like { _id: '...' } or a user object
+    if (typeof item === "object") return item._id || item.id || item.user?._id || item.user || undefined;
+    return item;
+  };
+
   const handleInterestSent = (receiverId) => {
-    setMatches((prev) =>
-      prev.filter((match) => {
-        const id = match?._id || match?.id || match?.user?._id || match?.user;
-        return id !== receiverId;
-      })
-    );
+    const rid = normalizeId(receiverId);
+    console.log("MatchesPage: handleInterestSent called with", receiverId, "normalized->", rid);
+    setMatches((prev) => {
+      console.log("MatchesPage: before filter, matches", prev?.length);
+      const filtered = prev.filter((match) => {
+        const id = normalizeId(match?._id || match?.id || match?.user?._id || match?.user);
+        return id !== rid;
+      });
+      console.log("MatchesPage: after filter, matches", filtered?.length);
+      return filtered;
+    });
   };
 
   if (loading) {

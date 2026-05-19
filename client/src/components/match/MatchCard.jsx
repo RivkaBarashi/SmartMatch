@@ -13,7 +13,15 @@ const MatchCard = ({ match, onInterestSent }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const receiverId = match?._id || match?.id || match?.user?._id || match?.user;
+  const rawReceiver = match?._id || match?.id || match?.user?._id || match?.user;
+
+  const normalizeId = (item) => {
+    if (!item && item !== 0) return item;
+    if (typeof item === "object") return item._id || item.id || item.user?._id || item.user || undefined;
+    return item;
+  };
+
+  const receiverId = normalizeId(rawReceiver);
 
   const handleSendInterest = async () => {
     try {
@@ -36,7 +44,14 @@ const MatchCard = ({ match, onInterestSent }) => {
   };
 
   return (
-    <Card sx={{ mb: 2 }}>
+    <Card
+      sx={{
+        mb: 2,
+        borderRadius: 20,
+        boxShadow: "0 16px 38px rgba(15, 23, 42, 0.08)",
+        border: "1px solid rgba(63, 113, 213, 0.12)",
+      }}
+    >
       <CardContent>
         <Stack spacing={1}>
           <Typography variant="h6">
