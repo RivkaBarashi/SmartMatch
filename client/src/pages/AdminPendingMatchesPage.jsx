@@ -1,43 +1,92 @@
-import { useEffect, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from "@mui/material";
-import { getPendingMatches, removePendingMatch } from "../services/admin.service.js";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  getAdminUserProfile,
+  getPendingMatches,
+  removePendingMatch,
+} from "../services/admin.service.js";
+
+const getServerBaseUrl = () => {
+  const base = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  return base.replace(/\/api\/?$/, "");
+};
+
+const fileUrl = (path) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  if (path.startsWith("/")) return `${getServerBaseUrl()}${path}`;
+  return `${getServerBaseUrl()}/${path}`;
+};
 
 const AdminPendingMatchesPage = () => {
   const [matches, setMatches] = useState([]);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const loadMatches = async () => {
+  const loadMatches = useCallback(async () => {
     try {
       setLoading(true);
+      setMessage("");
+
       const data = await getPendingMatches();
-      setMatches(data?.matches || []);
+      setMatches(data?.matches || data?.data || []);
     } catch (err) {
-      console.error("Failed to load pending matches:", err);
-      setMessage("לא הצלחנו לטעון הצעות");
+      setMessage(err.message || "לא הצלחנו לטעון הצעות");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadMatches();
-  }, []);
+  }, [loadMatches]);
+
+  const handleOpenProfile = async (userId) => {
+    try {
+      setProfileLoading(true);
+      setMessage("");
+
+      const data = await getAdminUserProfile(userId);
+      setSelectedProfile(data);
+      setOpen(true);
+    } catch (err) {
+      setMessage(err.message || "לא הצלחנו לטעון פרופיל");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const handleRemove = async (match) => {
     try {
-      await removePendingMatch({
-        senderId: match.sender?._id,
-        receiverId: match.receiver?._id,
-      });
+      const senderId = match?.sender?._id || match?.sender?.id;
+      const receiverId = match?.receiver?._id || match?.receiver?.id;
+
+      await removePendingMatch({ senderId, receiverId });
 
       setMessage("ההצעה הוסרה מהרשימה");
-      loadMatches();
+      await loadMatches();
     } catch (err) {
-      console.error("Failed to remove pending match:", err);
-      setMessage("לא הצלחנו להסיר את ההצעה");
+      setMessage(err.message || "לא הצלחנו להסיר את ההצעה");
     }
   };
+
+  const profile = selectedProfile?.profile;
+  const user = selectedProfile?.user;
 
   if (loading) {
     return (
@@ -54,38 +103,99 @@ const AdminPendingMatchesPage = () => {
       </Typography>
 
       {message && (
-        <Alert severity={message.includes("הוסרה") ? "success" : "error"} sx={{ mb: 2 }}>
+        <Alert
+          severity={message.includes("הוסרה") ? "success" : "error"}
+          sx={{ mb: 2 }}
+        >
           {message}
         </Alert>
       )}
 
+      {profileLoading && <CircularProgress sx={{ mb: 2 }} />}
+
       {matches.length === 0 ? (
         <Typography>אין הצעות שממתינות לטיפול</Typography>
       ) : (
-        matches.map((match) => (
-          <Paper key={match._id} sx={{ p: 2, mb: 2 }}>
-            <Stack spacing={1}>
-              <Typography variant="h6">הצעה לטיפול</Typography>
+        matches.map((match) => {
+          const senderId = match?.sender?._id || match?.sender?.id;
+          const receiverId = match?.receiver?._id || match?.receiver?.id;
 
-              <Typography>
-                שולח: {match.sender?.name || "לא צוין"}
-              </Typography>
+          return (
+            <Paper key={match._id || `${senderId}-${receiverId}`} sx={{ p: 2, mb: 2 }}>
+              <Stack spacing={1}>
+                <Typography variant="h6">הצעה לטיפול</Typography>
 
-              <Typography>
-                מקבל: {match.receiver?.name || "לא צוין"}
-              </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography>שולח:</Typography>
+                  <Button variant="text" onClick={() => handleOpenProfile(senderId)}>
+                    {match.sender?.name || "לא צוין"}
+                  </Button>
+                </Stack>
 
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography>מקבל:</Typography>
+                  <Button variant="text" onClick={() => handleOpenProfile(receiverId)}>
+                    {match.receiver?.name || "לא צוין"}
+                  </Button>
+                </Stack>
+
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleRemove(match)}
+                >
+                  הסרה מהרשימה
+                </Button>
+              </Stack>
+            </Paper>
+          );
+        })
+      )}
+
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>פרופיל משתמש</DialogTitle>
+
+        <DialogContent dividers>
+          <Stack spacing={1.5}>
+            <Typography variant="h6">{user?.name || "משתמש"}</Typography>
+            <Typography>מספר מזהה: {user?.idNumber || "לא צוין"}</Typography>
+            <Typography>תפקיד: {user?.role || "לא צוין"}</Typography>
+
+            <Typography sx={{ mt: 2 }}>גיל: {profile?.age || "לא צוין"}</Typography>
+            <Typography>עיר: {profile?.city || "לא צוין"}</Typography>
+            <Typography>גובה: {profile?.height || "לא צוין"}</Typography>
+            <Typography>סגנון: {profile?.style || "לא צוין"}</Typography>
+            <Typography>מראה: {profile?.appearance || "לא צוין"}</Typography>
+            <Typography>תיאור: {profile?.description || "לא צוין"}</Typography>
+
+            {profile?.image && (
               <Button
                 variant="outlined"
-                color="error"
-                onClick={() => handleRemove(match)}
+                href={fileUrl(profile.image)}
+                target="_blank"
+                rel="noreferrer"
               >
-                הסרה מהרשימה
+                צפייה בתמונה
               </Button>
-            </Stack>
-          </Paper>
-        ))
-      )}
+            )}
+
+            {profile?.resumePdf && (
+              <Button
+                variant="outlined"
+                href={fileUrl(profile.resumePdf)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                צפייה בקובץ PDF
+              </Button>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>סגירה</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

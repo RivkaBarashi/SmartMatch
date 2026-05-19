@@ -2,9 +2,6 @@
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use(
@@ -15,15 +12,32 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    const baseURL = config.baseURL || api.defaults.baseURL || "";
-    const url = config.url || "";
-    console.log(
-      `API request: ${config.method?.toUpperCase() || "REQUEST"} ${baseURL}${url}`
-    );
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
 
     return config;
   },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
   (error) => {
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error.message ||
+      "שגיאה בפנייה לשרת";
+
+    error.message = message;
+
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+    }
+
     return Promise.reject(error);
   }
 );

@@ -25,8 +25,7 @@ const InterestCard = ({ interest, type, onChanged }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const otherUser = type === "incoming" ? interest.sender : interest.receiver;
-  const interestId = interest._id || interest.id;
+  const otherUser = type === "incoming" ? interest?.sender : interest?.receiver;
   const otherUserId = otherUser?._id || otherUser?.id;
 
   const handleAction = async (action, value) => {
@@ -39,11 +38,11 @@ const InterestCard = ({ interest, type, onChanged }) => {
       setMessage("הפעולה בוצעה בהצלחה");
 
       if (onChanged) {
-        onChanged();
+        await onChanged();
       }
     } catch (err) {
       console.error("Interest action failed:", err);
-      setMessage("לא הצלחנו לבצע את הפעולה");
+      setMessage(err.message || "לא הצלחנו לבצע את הפעולה");
     } finally {
       setLoading(false);
     }
@@ -57,18 +56,22 @@ const InterestCard = ({ interest, type, onChanged }) => {
             {otherUser?.name || "משתמש"}
           </Typography>
 
+          <Typography>
+            מזהה: {otherUser?.idNumber || "לא צוין"}
+          </Typography>
+
           <Chip
-            label={getStatusLabel(interest.status)}
+            label={getStatusLabel(interest?.status)}
             size="small"
             sx={{ width: "fit-content" }}
           />
 
-          {type === "incoming" && interest.status === "pending" && (
+          {type === "incoming" && interest?.status === "pending" && (
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained"
-                disabled={loading}
-                onClick={() => handleAction(acceptInterest, interestId)}
+                disabled={loading || !otherUserId}
+                onClick={() => handleAction(acceptInterest, otherUserId)}
               >
                 אישור
               </Button>
@@ -76,15 +79,15 @@ const InterestCard = ({ interest, type, onChanged }) => {
               <Button
                 variant="outlined"
                 color="error"
-                disabled={loading}
-                onClick={() => handleAction(rejectInterest, interestId)}
+                disabled={loading || !otherUserId}
+                onClick={() => handleAction(rejectInterest, otherUserId)}
               >
                 דחייה
               </Button>
             </Stack>
           )}
 
-          {interest.status === "accepted" && (
+          {interest?.status === "accepted" && (
             <Button
               variant="contained"
               disabled={loading || !otherUserId}

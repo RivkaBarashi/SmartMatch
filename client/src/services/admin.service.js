@@ -5,6 +5,11 @@ export const getAdminUsers = async () => {
   return response.data;
 };
 
+export const getAdminUserProfile = async (userId) => {
+  const response = await api.get(`/api/admin/users/${userId}/profile`);
+  return response.data;
+};
+
 export const getPendingMatches = async () => {
   const response = await api.get("/api/admin/pending-matches");
   return response.data;

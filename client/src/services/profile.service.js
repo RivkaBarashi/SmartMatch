@@ -1,13 +1,7 @@
 import api from "../api/axios.js";
 
 export const createProfile = async (data) => {
-  const config = {};
-
-  if (data instanceof FormData) {
-    config.headers = {};
-  }
-
-  const response = await api.post("/api/profile", data, config);
+  const response = await api.post("/api/profile", data);
   return response.data;
 };
 
@@ -17,12 +11,6 @@ export const getMyProfile = async () => {
 };
 
 export const updateProfile = async (data) => {
-  const config = {};
-
-  if (data instanceof FormData) {
-    config.headers = {};
-  }
-
-  const response = await api.put("/api/profile", data, config);
+  const response = await api.put("/api/profile", data);
   return response.data;
 };

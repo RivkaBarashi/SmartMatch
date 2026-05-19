@@ -1,12 +1,19 @@
 import { useState } from "react";
-import { Card, CardContent, Typography, Button, Stack, Alert } from "@mui/material";
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { sendInterest } from "../../services/interest.service.js";
 
-const MatchCard = ({ match }) => {
+const MatchCard = ({ match, onInterestSent }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const receiverId = match.user?._id || match.user || match._id || match.id;
+  const receiverId = match?._id || match?.id || match?.user?._id || match?.user;
 
   const handleSendInterest = async () => {
     try {
@@ -16,9 +23,13 @@ const MatchCard = ({ match }) => {
       await sendInterest(receiverId);
 
       setMessage("ההתעניינות נשלחה בהצלחה");
+
+      if (onInterestSent) {
+        onInterestSent(receiverId);
+      }
     } catch (err) {
       console.error("Failed to send interest:", err);
-      setMessage("לא הצלחנו לשלוח התעניינות");
+      setMessage(err.message || "לא הצלחנו לשלוח התעניינות");
     } finally {
       setLoading(false);
     }
@@ -29,16 +40,14 @@ const MatchCard = ({ match }) => {
       <CardContent>
         <Stack spacing={1}>
           <Typography variant="h6">
-            {match.name || match.profile?.name || "משתמש"}
+            {match?.name || "משתמש"}
           </Typography>
 
-          <Typography>
-            עיר: {match.city || match.profile?.city || "לא צוין"}
-          </Typography>
-
-          <Typography>
-            גיל: {match.age || match.profile?.age || "לא צוין"}
-          </Typography>
+          <Typography>עיר: {match?.city || "לא צוין"}</Typography>
+          <Typography>גיל: {match?.age || "לא צוין"}</Typography>
+          <Typography>גובה: {match?.height || "לא צוין"}</Typography>
+          <Typography>סגנון: {match?.style || "לא צוין"}</Typography>
+          <Typography>תיאור: {match?.description || "לא צוין"}</Typography>
 
           <Button
             variant="contained"
@@ -48,7 +57,11 @@ const MatchCard = ({ match }) => {
             {loading ? "שולח..." : "שליחת התעניינות"}
           </Button>
 
-          {message && <Alert severity={message.includes("בהצלחה") ? "success" : "error"}>{message}</Alert>}
+          {message && (
+            <Alert severity={message.includes("בהצלחה") ? "success" : "error"}>
+              {message}
+            </Alert>
+          )}
         </Stack>
       </CardContent>
     </Card>

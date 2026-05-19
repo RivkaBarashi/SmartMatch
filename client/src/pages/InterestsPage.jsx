@@ -11,7 +11,7 @@ import {
   getIncomingInterests,
   getOutgoingInterests,
 } from "../services/interest.service.js";
-import InterestCard from "../components/interest/InterestCard";
+import InterestCard from "../components/interest/InterestCard.jsx";
 
 const normalizeArray = (data) => {
   if (Array.isArray(data)) return data;
@@ -39,7 +39,7 @@ const InterestsPage = () => {
       setOutgoing(normalizeArray(outgoingData));
     } catch (err) {
       console.error("Failed to load interests:", err);
-      setError("לא הצלחנו לטעון התעניינויות");
+      setError(err.message || "לא הצלחנו לטעון התעניינויות");
     } finally {
       setLoading(false);
     }
@@ -75,39 +75,33 @@ const InterestsPage = () => {
       </Tabs>
 
       <Box sx={{ mt: 3 }}>
-        {tab === 0 && (
-          <>
-            {incoming.length === 0 ? (
-              <Typography>אין פניות נכנסות כרגע</Typography>
-            ) : (
-              incoming.map((interest) => (
-                <InterestCard
-                  key={interest._id || interest.id}
-                  interest={interest}
-                  type="incoming"
-                  onChanged={loadInterests}
-                />
-              ))
-            )}
-          </>
-        )}
+        {tab === 0 &&
+          (incoming.length === 0 ? (
+            <Typography>אין פניות נכנסות כרגע</Typography>
+          ) : (
+            incoming.map((interest) => (
+              <InterestCard
+                key={interest._id || interest.id}
+                interest={interest}
+                type="incoming"
+                onChanged={loadInterests}
+              />
+            ))
+          ))}
 
-        {tab === 1 && (
-          <>
-            {outgoing.length === 0 ? (
-              <Typography>אין פניות יוצאות כרגע</Typography>
-            ) : (
-              outgoing.map((interest) => (
-                <InterestCard
-                  key={interest._id || interest.id}
-                  interest={interest}
-                  type="outgoing"
-                  onChanged={loadInterests}
-                />
-              ))
-            )}
-          </>
-        )}
+        {tab === 1 &&
+          (outgoing.length === 0 ? (
+            <Typography>אין פניות יוצאות כרגע</Typography>
+          ) : (
+            outgoing.map((interest) => (
+              <InterestCard
+                key={interest._id || interest.id}
+                interest={interest}
+                type="outgoing"
+                onChanged={loadInterests}
+              />
+            ))
+          ))}
       </Box>
     </Box>
   );
